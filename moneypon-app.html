@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MoneyPon — Pon Lajan Ou</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#051209;--bg2:#081a10;--card:#0d2418;--card2:#112b1e;--green:#00875a;--green2:#00c27a;--gold:#f0b429;--red:#ff4d6d;--blue:#3b82f6;--text:#e8f5ee;--text2:#b8d4c2;--muted:#5a8a6e;--border:rgba(0,194,122,0.08);--border2:rgba(255,255,255,0.06)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;overscroll-behavior:none}
+input,button,select,textarea{font-family:'Plus Jakarta Sans',sans-serif}
+button{cursor:pointer;border:none;outline:none}
+input{outline:none}
+#app{width:100%;max-width:430px;height:100vh;margin:0 auto;position:relative;overflow:hidden;background:var(--bg);box-shadow:0 0 60px rgba(0,0,0,0.8)}
+.screen{position:absolute;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;background:var(--bg)}
+.screen.active{display:flex}
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:20px}
+.topbar{background:var(--bg2);padding:50px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--border);position:relative}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--green2),transparent);opacity:0.3}
+.topbar-logo{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--green2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.topbar-title{font-size:0.9rem;font-weight:700}
+.topbar-back{background:none;color:var(--green2);font-size:0.85rem;font-weight:600;padding:4px 8px;border-radius:8px}
+.topbar-icon-btn{width:32px;height:32px;background:rgba(255,255,255,0.05);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.85rem}
+.bottom-nav{background:var(--bg2);display:flex;border-top:1px solid var(--border);padding:10px 0 24px;flex-shrink:0}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0}
+.nav-icon{font-size:1.1rem}
+.nav-label{font-size:0.55rem;color:var(--muted);font-weight:600;letter-spacing:0.3px}
+.nav-item.active .nav-label{color:var(--green2)}
+.nav-center-wrap{flex:1;display:flex;flex-direction:column;align-items:center;margin-top:-20px;cursor:pointer}
+.nav-center-btn{width:44px;height:44px;background:linear-gradient(135deg,var(--green),var(--green2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;box-shadow:0 4px 20px rgba(0,194,122,0.4);border:3px solid var(--bg2)}
+.nav-center-label{font-size:0.52rem;color:var(--green2);font-weight:700;margin-top:3px}
+.pad{padding:0 16px}
+.card{background:var(--card);border-radius:16px;border:1px solid var(--border)}
+.btn{width:100%;padding:14px;border-radius:12px;font-size:0.9rem;font-weight:700;transition:all 0.2s}
+.btn:active{transform:scale(0.97)}
+.btn-green{background:linear-gradient(135deg,var(--green),var(--green2));color:#fff;box-shadow:0 4px 20px rgba(0,194,122,0.3)}
+.btn-gold{background:linear-gradient(135deg,#d4900a,var(--gold));color:#000}
+.btn-outline{background:transparent;border:1.5px solid var(--green2);color:var(--green2)}
+.btn-red{background:rgba(255,77,109,0.15);border:1px solid rgba(255,77,109,0.3);color:var(--red)}
+.input-group{margin-bottom:14px}
+.input-label{font-size:0.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;display:block}
+.input-field{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:10px;padding:12px 14px;color:var(--text);font-size:0.88rem;transition:border-color 0.2s}
+.input-field:focus{border-color:var(--green2)}
+.input-field::placeholder{color:var(--muted)}
+select.input-field option{background:var(--card)}
+.section-title{font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin:16px 0 8px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:0.65rem;font-weight:700}
+.badge-green{background:rgba(0,194,122,0.15);color:var(--green2);border:1px solid rgba(0,194,122,0.25)}
+.badge-gold{background:rgba(240,180,41,0.15);color:var(--gold);border:1px solid rgba(240,180,41,0.25)}
+.badge-red{background:rgba(255,77,109,0.15);color:var(--red);border:1px solid rgba(255,77,109,0.25)}
+.badge-blue{background:rgba(59,130,246,0.15);color:var(--blue);border:1px solid rgba(59,130,246,0.25)}
+.badge-muted{background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid var(--border2)}
+#toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:25px;font-size:0.82rem;font-weight:600;z-index:9999;opacity:0;transition:opacity 0.3s;white-space:nowrap;pointer-events:none;max-width:90%}
+#toast.show{opacity:1}
+#loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;transition:opacity 0.5s}
+#loading-overlay.hidden{opacity:0;pointer-events:none}
+.loader-logo{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--green2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;animation:pulse 2s infinite}
+.loader-sub{font-size:0.75rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.loader-spinner{width:32px;height:32px;border:2px solid rgba(0,194,122,0.2);border-top-color:var(--green2);border-radius:50%;animation:spin 0.8s linear infinite;margin-top:24px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:var(--bg2);border-radius:24px 24px 0 0;padding:20px 20px 40px;width:100%;max-width:430px;border-top:1px solid var(--border);animation:slideUp 0.3s ease}
+.modal-handle{width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:800;margin-bottom:16px;color:var(--gold)}
+.live-dot{display:inline-block;width:6px;height:6px;background:var(--green2);border-radius:50%;animation:blink 2s infinite}
+#screen-splash{background:var(--bg);align-items:center;justify-content:center}
+.splash-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(0,194,122,0.08) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(240,180,41,0.06) 0%,transparent 60%)}
+.splash-content{position:relative;z-index:1;text-align:center;padding:40px 32px;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:center}
+.splash-logo{font-family:'Playfair Display',serif;font-size:3rem;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--green2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.splash-tagline{font-size:0.85rem;color:var(--muted);margin-bottom:60px}
+.splash-tagline span{color:var(--green2);font-weight:600}
+.splash-illustration{font-size:3rem;margin-bottom:50px;animation:float 3s ease-in-out infinite}
+.splash-btns{width:100%;display:flex;flex-direction:column;gap:12px}
+.auth-header{padding:60px 24px 24px;background:linear-gradient(180deg,var(--bg2),var(--bg))}
+.auth-title{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--green2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
+.auth-sub{font-size:0.82rem;color:var(--muted)}
+.auth-body{padding:24px;flex:1;overflow-y:auto}
+.auth-footer{padding:16px 24px 32px;text-align:center;font-size:0.8rem;color:var(--muted)}
+.auth-link{color:var(--green2);font-weight:700;cursor:pointer}
+.balance-hero{margin:16px;background:linear-gradient(135deg,#003d22,#005c33);border-radius:20px;padding:20px;position:relative;overflow:hidden;border:1px solid rgba(0,194,122,0.2)}
+.balance-greeting{font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:2px}
+.balance-name{font-size:0.92rem;font-weight:700;margin-bottom:12px}
+.balance-amount-label{font-size:0.62rem;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px}
+.balance-amount{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--gold);margin:2px 0 14px;position:relative;z-index:1}
+.balance-actions{display:flex;gap:8px;position:relative;z-index:1}
+.balance-action{flex:1;background:rgba(255,255,255,0.08);border-radius:10px;padding:8px 4px;text-align:center;border:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.2s}
+.ba-icon{font-size:1.1rem}
+.ba-label{font-size:0.58rem;color:rgba(255,255,255,0.6);margin-top:3px;font-weight:600}
+.rate-bar{margin:0 16px 16px;background:var(--card);border-radius:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(240,180,41,0.12)}
+.rate-label{font-size:0.6rem;color:var(--muted);margin-bottom:2px}
+.rate-value{font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:800;color:var(--gold)}
+.rate-live{font-size:0.62rem;color:var(--green2);display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.rate-update{font-size:0.58rem;color:var(--muted);margin-top:2px}
+.quick-actions{margin:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quick-action-card{background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s}
+.quick-action-card:hover{border-color:rgba(0,194,122,0.25);transform:translateY(-1px)}
+.qa-icon{font-size:1.4rem;margin-bottom:6px}
+.qa-title{font-size:0.78rem;font-weight:700;margin-bottom:2px}
+.qa-sub{font-size:0.62rem;color:var(--muted)}
+.tx-item{background:var(--card);border-radius:12px;padding:12px;margin:0 16px 8px;display:flex;align-items:center;gap:12px;border:1px solid var(--border2);cursor:pointer;transition:border-color 0.2s}
+.tx-icon-wrap{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.tx-info{flex:1;min-width:0}
+.tx-title{font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-date{font-size:0.65rem;color:var(--muted);margin-top:2px}
+.tx-amount{font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:800;white-space:nowrap}
+.amount-block{margin:0 16px;background:var(--card);border-radius:16px;border:1.5px solid rgba(0,194,122,0.15);overflow:hidden}
+.amount-row{padding:14px 16px}
+.amount-row+.amount-row{border-top:1px solid var(--border2)}
+.amount-row-label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.amount-input-large{width:100%;background:transparent;border:none;font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--text)}
+.amount-input-large::placeholder{color:rgba(255,255,255,0.15)}
+.amount-currency-tag{font-size:0.72rem;color:var(--muted);margin-top:3px}
+.swap-btn-row{text-align:center;padding:4px;background:var(--card2)}
+.swap-btn{background:rgba(0,194,122,0.15);border:1px solid rgba(0,194,122,0.2);color:var(--green2);width:28px;height:28px;border-radius:50%;font-size:0.85rem;display:inline-flex;align-items:center;justify-content:center}
+.fee-summary{margin:12px 16px;background:rgba(0,194,122,0.05);border:1px solid rgba(0,194,122,0.12);border-radius:12px;padding:12px 14px}
+.fee-row{display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:6px}
+.fee-label{color:var(--muted)}
+.fee-value{font-weight:600}
+.fee-divider{height:1px;background:rgba(0,194,122,0.1);margin:8px 0}
+.fee-total{display:flex;justify-content:space-between;font-size:0.85rem;font-weight:800}
+.fee-total .fee-value{color:var(--green2)}
+.search-bar-wrap{margin:12px 16px;position:relative}
+.search-bar{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:12px;padding:11px 14px 11px 40px;color:var(--text);font-size:0.85rem}
+.search-bar:focus{border-color:var(--green2)}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:0.85rem;color:var(--muted)}
+.filter-chips{display:flex;gap:8px;margin:0 16px 12px;overflow-x:auto;padding-bottom:4px}
+.filter-chip{flex-shrink:0;padding:5px 12px;border-radius:20px;font-size:0.7rem;font-weight:600;background:var(--card);color:var(--muted);border:1px solid var(--border2);cursor:pointer;transition:all 0.2s}
+.filter-chip.active{background:rgba(0,194,122,0.15);color:var(--green2);border-color:rgba(0,194,122,0.3)}
+.agent-card{margin:0 16px 10px;background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border2);cursor:pointer;transition:all 0.2s}
+.agent-card:hover{border-color:rgba(0,194,122,0.25)}
+.agent-card-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.agent-avatar-wrap{position:relative}
+.agent-avatar{width:44px;height:44px;background:rgba(0,194,122,0.1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:1px solid rgba(0,194,122,0.15)}
+.agent-online-dot{position:absolute;bottom:2px;right:2px;width:10px;height:10px;background:var(--green2);border-radius:50%;border:2px solid var(--card)}
+.agent-offline-dot{position:absolute;bottom:2px;right:2px;width:10px;height:10px;background:var(--muted);border-radius:50%;border:2px solid var(--card)}
+.agent-card-info{flex:1}
+.agent-card-name{font-size:0.88rem;font-weight:700;margin-bottom:2px}
+.agent-card-location{font-size:0.68rem;color:var(--muted)}
+.agent-card-rating{display:flex;align-items:center;gap:3px;font-size:0.68rem;color:var(--gold);font-weight:700}
+.agent-card-stats{display:flex;gap:6px}
+.agent-stat-pill{background:var(--card2);border-radius:8px;padding:5px 8px;font-size:0.65rem;color:var(--muted);border:1px solid var(--border2)}
+.agent-stat-pill span{color:var(--text);font-weight:700}
+.agent-call-btn{background:rgba(0,194,122,0.1);border:1px solid rgba(0,194,122,0.2);color:var(--green2);border-radius:8px;padding:5px 10px;font-size:0.68rem;font-weight:700}
+.agent-profile-hero{margin:16px;background:linear-gradient(135deg,#002d18,#003d22);border-radius:20px;padding:20px;text-align:center;border:1px solid rgba(0,194,122,0.15)}
+.agent-profile-avatar{width:64px;height:64px;background:rgba(0,194,122,0.15);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 10px;border:2px solid rgba(0,194,122,0.2)}
+.agent-profile-name{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;margin-bottom:4px}
+.agent-profile-location{font-size:0.75rem;color:var(--muted);margin-bottom:12px}
+.agent-profile-stats{display:flex}
+.agent-stat-item{flex:1;text-align:center;padding:8px 4px}
+.agent-stat-item+.agent-stat-item{border-left:1px solid rgba(255,255,255,0.08)}
+.agent-stat-val{font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:var(--gold)}
+.agent-stat-lbl{font-size:0.58rem;color:rgba(255,255,255,0.4);margin-top:2px}
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border2)}
+.info-row:last-child{border-bottom:none}
+.info-row-label{font-size:0.72rem;color:var(--muted)}
+.info-row-value{font-size:0.82rem;font-weight:600}
+.date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:0 16px 16px}
+.date-cell{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:1.5px solid transparent;background:var(--card);transition:all 0.2s}
+.date-cell:hover{border-color:rgba(0,194,122,0.3)}
+.date-cell.selected{background:rgba(0,194,122,0.15);border-color:var(--green2)}
+.date-day{font-size:0.52rem;color:var(--muted)}
+.date-num{font-size:0.82rem;font-weight:700}
+.time-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 16px 16px}
+.time-cell{padding:8px;border-radius:10px;text-align:center;font-size:0.78rem;font-weight:600;background:var(--card);border:1.5px solid transparent;cursor:pointer;transition:all 0.2s}
+.time-cell:hover{border-color:rgba(0,194,122,0.3)}
+.time-cell.selected{background:rgba(0,194,122,0.15);border-color:var(--green2);color:var(--green2)}
+.transfer-status-card{margin:16px;background:linear-gradient(135deg,#002d18,#003d22);border-radius:18px;padding:18px;text-align:center;border:1px solid rgba(0,194,122,0.15)}
+.transfer-status-icon{font-size:2.2rem;margin-bottom:8px}
+.transfer-ref{font-size:0.65rem;color:rgba(255,255,255,0.35);margin-bottom:4px;letter-spacing:1px;text-transform:uppercase}
+.transfer-amount{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:var(--gold);margin-bottom:8px}
+.timeline{margin:0 16px}
+.tl-item{display:flex;gap:14px;position:relative;padding-bottom:16px}
+.tl-item:last-child{padding-bottom:0}
+.tl-left{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.65rem;flex-shrink:0;position:relative;z-index:1}
+.tl-dot.done{background:var(--green);color:#fff}
+.tl-dot.active{background:var(--gold);color:#000;animation:pulse 1.5s infinite}
+.tl-dot.waiting{background:rgba(255,255,255,0.07);color:var(--muted);border:1.5px solid var(--border2)}
+.tl-line{flex:1;width:1.5px;background:var(--border2);margin:2px 0;min-height:20px}
+.tl-line.done{background:var(--green);opacity:0.4}
+.tl-right{flex:1;padding-top:2px}
+.tl-title{font-size:0.82rem;font-weight:700}
+.tl-title.active{color:var(--gold)}
+.tl-title.waiting{color:var(--muted)}
+.tl-sub{font-size:0.68rem;color:var(--muted);margin-top:3px}
+.agent-hero{margin:16px;background:linear-gradient(135deg,#2d1b00,#5c3800);border-radius:18px;padding:18px;border:1px solid rgba(240,180,41,0.15)}
+.agent-hero-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.agent-hero-icon{width:44px;height:44px;background:rgba(240,180,41,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.agent-hero-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:800;color:var(--gold)}
+.agent-hero-region{font-size:0.68rem;color:rgba(240,180,41,0.5)}
+.agent-hero-stats{display:flex;gap:8px}
+.agent-hero-stat{flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center}
+.agent-hero-stat .v{font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:800;color:var(--gold)}
+.agent-hero-stat .l{font-size:0.55rem;color:rgba(255,255,255,0.4)}
+.request-card{margin:0 16px 10px;background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border2)}
+.request-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.request-ref{font-size:0.65rem;color:var(--muted);font-family:monospace}
+.request-amount{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:var(--gold);margin-bottom:4px}
+.request-route{font-size:0.7rem;color:var(--muted);margin-bottom:10px}
+.request-user{font-size:0.72rem;color:var(--text2);margin-bottom:10px}
+.request-btns{display:flex;gap:8px}
+.req-btn-confirm{flex:2;padding:9px;background:rgba(0,194,122,0.15);border:1px solid rgba(0,194,122,0.3);color:var(--green2);border-radius:10px;font-size:0.78rem;font-weight:700}
+.req-btn-decline{flex:1;padding:9px;background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.2);color:var(--red);border-radius:10px;font-size:0.78rem;font-weight:700}
+.admin-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px}
+.admin-stat-card{background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border2)}
+.admin-stat-card.highlight{border-color:rgba(0,194,122,0.2)}
+.admin-stat-card.gold{border-color:rgba(240,180,41,0.2)}
+.admin-stat-icon{font-size:1.2rem;margin-bottom:6px}
+.admin-stat-val{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;color:var(--gold);margin-bottom:2px}
+.admin-stat-lbl{font-size:0.62rem;color:var(--muted)}
+.admin-action-row{margin:0 16px 8px;background:var(--card);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border2)}
+.admin-action-info{flex:1}
+.admin-action-name{font-size:0.82rem;font-weight:700;margin-bottom:2px}
+.admin-action-sub{font-size:0.65rem;color:var(--muted)}
+.admin-action-btns{display:flex;gap:6px}
+.admin-btn-approve{padding:6px 12px;background:rgba(0,194,122,0.15);border:1px solid rgba(0,194,122,0.25);color:var(--green2);border-radius:8px;font-size:0.68rem;font-weight:700}
+.admin-btn-reject{padding:6px 12px;background:rgba(255,77,109,0.1);border:1px solid rgba(255,77,109,0.2);color:var(--red);border-radius:8px;font-size:0.68rem;font-weight:700}
+.admin-btn-block{padding:6px 12px;background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.2);color:orange;border-radius:8px;font-size:0.68rem;font-weight:700}
+.profile-hero{margin:16px;background:linear-gradient(135deg,#003d22,#004d2a);border-radius:20px;padding:20px;text-align:center;border:1px solid rgba(0,194,122,0.12)}
+.profile-avatar{width:56px;height:56px;background:rgba(240,180,41,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 10px;border:2px solid rgba(240,180,41,0.2)}
+.profile-name{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;margin-bottom:2px}
+.profile-email{font-size:0.72rem;color:rgba(255,255,255,0.4);margin-bottom:12px}
+.profile-stats{display:flex}
+.profile-stat{flex:1;text-align:center;padding:8px}
+.profile-stat+.profile-stat{border-left:1px solid rgba(255,255,255,0.08)}
+.profile-stat .v{font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:800;color:var(--gold)}
+.profile-stat .l{font-size:0.55rem;color:rgba(255,255,255,0.35)}
+.menu-section{margin:0 16px 6px}
+.menu-row{background:var(--card);border-radius:12px;padding:13px 14px;margin-bottom:4px;display:flex;align-items:center;gap:12px;border:1px solid var(--border2);cursor:pointer;transition:border-color 0.2s}
+.menu-row:hover{border-color:var(--border)}
+.menu-row-icon{font-size:1rem;width:24px;text-align:center}
+.menu-row-text{flex:1;font-size:0.82rem;font-weight:600}
+.menu-row-arrow{font-size:0.7rem;color:var(--muted)}
+.empty-state{text-align:center;padding:40px 20px}
+.empty-icon{font-size:2.5rem;margin-bottom:10px;opacity:0.5}
+.empty-title{font-size:0.9rem;font-weight:700;color:var(--muted);margin-bottom:4px}
+.empty-sub{font-size:0.75rem;color:var(--muted);opacity:0.7}
+.history-item{margin:0 16px 8px;background:var(--card);border-radius:12px;padding:12px;border:1px solid var(--border2);cursor:pointer}
+.history-item-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.history-item-name{font-size:0.82rem;font-weight:700}
+.history-item-bottom{display:flex;justify-content:space-between}
+.history-item-meta{font-size:0.65rem;color:var(--muted)}
+.history-item-amount{font-family:'Playfair Display',serif;font-size:0.88rem;font-weight:800;color:var(--green2)}
+</style>
+</head>
+<body>
+<div id="loading-overlay"><div class="loader-logo">MoneyPon</div><div class="loader-sub">Pon Lajan Ou</div><div class="loader-spinner"></div></div>
+<div id="toast"></div>
+
+<div class="modal-overlay" id="modal-confirm-cash">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✅ Konfime — Confirm Cash</div>
+    <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px">Enter the exact amount you received</p>
+    <div class="input-group"><label class="input-label">Amount Received (USD)</label><input type="number" class="input-field" id="confirm-cash-amount" placeholder="e.g. 200"></div>
+    <input type="hidden" id="confirm-cash-txid">
+    <div style="background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.15);border-radius:10px;padding:10px;margin-bottom:14px;font-size:0.75rem;color:rgba(240,180,41,0.8)">⚠️ Make sure the amount is exact. Admin will verify before releasing.</div>
+    <button class="btn btn-gold" onclick="submitCashConfirmation()">Confirm I Received the Cash</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-confirm-cash')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-call-agent">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📞 Call Agent</div>
+    <div id="modal-agent-info" style="margin-bottom:16px"></div>
+    <button class="btn btn-green" id="modal-call-btn" onclick="callAgent()">📞 Call Now</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-call-agent')">Close</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-book-confirm">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📅 Konfime Randevou</div>
+    <div id="book-summary" style="margin-bottom:16px"></div>
+    <button class="btn btn-green" onclick="confirmBooking()">✅ Confirm Appointment</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-book-confirm')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-admin-release">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🚀 Release Transfer</div>
+    <div id="release-info" style="margin-bottom:16px;font-size:0.82rem;color:var(--text2)"></div>
+    <div style="background:rgba(0,194,122,0.06);border:1px solid rgba(0,194,122,0.15);border-radius:10px;padding:10px;margin-bottom:14px;font-size:0.75rem;color:var(--green2)">✅ By releasing, you confirm the USA agent should send Zelle now.</div>
+    <button class="btn btn-green" onclick="releaseTx()">Release & Notify USA Agent</button>
+    <button class="btn btn-red" style="margin-top:8px" onclick="flagTx()">🚩 Flag Transaction</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-admin-release')">Cancel</button>
+  </div>
+</div>
+
+<div id="app">
+<div class="screen active" id="screen-splash">
+  <div class="splash-bg"></div>
+  <div class="splash-content">
+    <div class="splash-illustration">🏦</div>
+    <div class="splash-logo">MoneyPon</div>
+    <div class="splash-tagline">Pon lajan ou — <span>Bridge your money</span><br>Haiti 🇭🇹 ↔ USA 🇺🇸</div>
+    <div class="splash-btns">
+      <button class="btn btn-green" onclick="showScreen('screen-login')">Konekte — Sign In</button>
+      <button class="btn btn-outline" onclick="showScreen('screen-register')">Kreye Kont — Register</button>
+    </div>
+    <div style="margin-top:16px;font-size:0.72rem;color:var(--muted)">Faster & cheaper than Western Union</div>
+  </div>
+</div>
+
+<div class="screen" id="screen-login">
+  <div class="auth-header">
+    <div style="margin-bottom:8px"><button class="topbar-back" onclick="showScreen('screen-splash')">← Back</button></div>
+    <div class="auth-title">Bon Retou 👋</div>
+    <div class="auth-sub">Sign in to your MoneyPon account</div>
+  </div>
+  <div class="auth-body scroll-area">
+    <div class="input-group"><label class="input-label">Email Address</label><input type="email" class="input-field" id="login-email" placeholder="yourname@email.com"></div>
+    <div class="input-group"><label class="input-label">Password / Modpas</label><input type="password" class="input-field" id="login-password" placeholder="••••••••"></div>
+    <button class="btn btn-green" onclick="loginUser()">Konekte — Sign In</button>
+    <div style="text-align:center;margin-top:14px;font-size:0.78rem;color:var(--muted)">— or —</div>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="loginAsAdmin()">⚙️ Admin Login</button>
+  </div>
+  <div class="auth-footer">Pa gen kont? <span class="auth-link" onclick="showScreen('screen-register')">Create Account</span></div>
+</div>
+
+<div class="screen" id="screen-register">
+  <div class="auth-header">
+    <div style="margin-bottom:8px"><button class="topbar-back" onclick="showScreen('screen-splash')">← Back</button></div>
+    <div class="auth-title">Kreye Kont ✨</div>
+    <div class="auth-sub">Create your free MoneyPon account</div>
+  </div>
+  <div class="auth-body scroll-area">
+    <div class="input-group"><label class="input-label">Full Name / Non Konplè</label><input type="text" class="input-field" id="reg-name" placeholder="e.g. Jean Baptiste"></div>
+    <div class="input-group"><label class="input-label">Email Address</label><input type="email" class="input-field" id="reg-email" placeholder="yourname@email.com"></div>
+    <div class="input-group"><label class="input-label">Phone / Telefòn</label><input type="tel" class="input-field" id="reg-phone" placeholder="+509 or +1..."></div>
+    <div class="input-group"><label class="input-label">Password / Modpas</label><input type="password" class="input-field" id="reg-password" placeholder="Min 6 characters"></div>
+    <div class="input-group">
+      <label class="input-label">I want to register as</label>
+      <select class="input-field" id="reg-role" onchange="toggleAgentFields()">
+        <option value="user">👤 Regular User — Send Money</option>
+        <option value="agent_pending">🤝 Agent — Handle Transfers</option>
+      </select>
+    </div>
+    <div id="agent-extra" style="display:none">
+      <div class="input-group">
+        <label class="input-label">Your Location</label>
+        <select class="input-field" id="reg-location">
+          <option value="">Select location</option>
+          <option value="Port-au-Prince, Haiti">🇭🇹 Port-au-Prince, Haiti</option>
+          <option value="Cap-Haïtien, Haiti">🇭🇹 Cap-Haïtien, Haiti</option>
+          <option value="Gonaïves, Haiti">🇭🇹 Gonaïves, Haiti</option>
+          <option value="New York, USA">🇺🇸 New York, USA</option>
+          <option value="Miami, USA">🇺🇸 Miami, USA</option>
+          <option value="Boston, USA">🇺🇸 Boston, USA</option>
+          <option value="Orlando, USA">🇺🇸 Orlando, USA</option>
+        </select>
+      </div>
+      <div class="input-group"><label class="input-label">Zelle / MonCash Number</label><input type="text" class="input-field" id="reg-zelle" placeholder="Your Zelle email or MonCash number"></div>
+      <div style="background:rgba(240,180,41,0.08);border:1px solid rgba(240,180,41,0.15);border-radius:10px;padding:10px;margin-bottom:14px;font-size:0.75rem;color:rgba(240,180,41,0.8)">⏳ Agent accounts require admin approval before activation.</div>
+    </div>
+    <button class="btn btn-green" onclick="registerUser()">Kreye Kont — Create Account</button>
+  </div>
+  <div class="auth-footer">Deja gen kont? <span class="auth-link" onclick="showScreen('screen-login')">Sign In</span></div>
+</div>
+
+<div class="screen" id="screen-user-home">
+  <div class="topbar"><span class="topbar-logo">MoneyPon</span><div class="topbar-icon-btn">🔔</div></div>
+  <div class="scroll-area">
+    <div class="balance-hero">
+      <div class="balance-greeting">Bonjou,</div>
+      <div class="balance-name" id="home-user-name">...</div>
+      <div class="balance-amount-label">Total Sent</div>
+      <div class="balance-amount" id="home-total-sent">$0.00</div>
+      <div class="balance-actions">
+        <div class="balance-action" onclick="showScreen('screen-send-money')"><div class="ba-icon">📤</div><div class="ba-label">Send</div></div>
+        <div class="balance-action" onclick="showScreen('screen-agents');loadAgents()"><div class="ba-icon">🤝</div><div class="ba-label">Agents</div></div>
+        <div class="balance-action" onclick="showScreen('screen-history');loadHistory()"><div class="ba-icon">📋</div><div class="ba-label">History</div></div>
+      </div>
+    </div>
+    <div class="rate-bar">
+      <div><div class="rate-label">Today's Rate — Prim Jodi</div><div class="rate-value">1 USD = 131 HTG</div></div>
+      <div style="text-align:right"><div class="rate-live"><span class="live-dot"></span> Live</div><div class="rate-update">Updated now</div></div>
+    </div>
+    <div class="section-title pad">Quick Actions</div>
+    <div class="quick-actions">
+      <div class="quick-action-card" onclick="showScreen('screen-send-money')"><div class="qa-icon">💸</div><div class="qa-title">Send Money</div><div class="qa-sub">Haiti → USA</div></div>
+      <div class="quick-action-card" onclick="showScreen('screen-agents');loadAgents()"><div class="qa-icon">🗂️</div><div class="qa-title">Find Agent</div><div class="qa-sub">Browse nearby</div></div>
+      <div class="quick-action-card" onclick="showScreen('screen-history');loadHistory()"><div class="qa-icon">📊</div><div class="qa-title">My Transfers</div><div class="qa-sub">Track history</div></div>
+      <div class="quick-action-card" onclick="showScreen('screen-profile')"><div class="qa-icon">👤</div><div class="qa-title">My Profile</div><div class="qa-sub">Account info</div></div>
+    </div>
+    <div class="section-title pad">Recent Transfers</div>
+    <div id="home-tx-list"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No transfers yet</div><div class="empty-sub">Start your first one!</div></div></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="showScreen('screen-user-home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
+    <div class="nav-item" onclick="showScreen('screen-send-money')"><span class="nav-icon">📤</span><span class="nav-label">Send</span></div>
+    <div class="nav-center-wrap" onclick="showScreen('screen-agents');loadAgents()"><div class="nav-center-btn">🤝</div><span class="nav-center-label">Agents</span></div>
+    <div class="nav-item" onclick="showScreen('screen-history');loadHistory()"><span class="nav-icon">📋</span><span class="nav-label">History</span></div>
+    <div class="nav-item" onclick="showScreen('screen-profile')"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></div>
+  </div>
+</div>
+
+<div class="screen" id="screen-send-money">
+  <div class="topbar"><button class="topbar-back" onclick="goBack()">← Back</button><span class="topbar-title">Voye Lajan — Send Money</span><div style="width:60px"></div></div>
+  <div class="scroll-area" style="padding-bottom:30px">
+    <div style="margin:16px;background:linear-gradient(135deg,#002d18,#003d22);border-radius:16px;padding:14px;text-align:center;border:1px solid rgba(0,194,122,0.15)">
+      <div style="font-size:0.62rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Transfer Direction</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:800;color:var(--gold)">🇭🇹 Haiti → USA 🇺🇸</div>
+    </div>
+    <div class="amount-block">
+      <div class="amount-row"><div class="amount-row-label">🇭🇹 You Send (USD Cash to Haiti Agent)</div><input type="number" class="amount-input-large" id="send-amount" placeholder="0" oninput="calculateTransfer()"><div class="amount-currency-tag">USD — Pay cash in person</div></div>
+      <div class="swap-btn-row"><button class="swap-btn">⬇</button></div>
+      <div class="amount-row"><div class="amount-row-label">🇺🇸 Recipient Gets (via Zelle)</div><div class="amount-input-large" id="receive-amount" style="color:var(--gold)">0</div><div class="amount-currency-tag">USD — Sent to recipient's Zelle</div></div>
+    </div>
+    <div class="fee-summary">
+      <div class="fee-row"><span class="fee-label">You Send</span><span class="fee-value" id="fee-send">$0.00</span></div>
+      <div class="fee-row"><span class="fee-label">Fee (15%)</span><span class="fee-value" style="color:var(--red)" id="fee-amount">-$0.00</span></div>
+      <div class="fee-divider"></div>
+      <div class="fee-total"><span>Recipient Gets</span><span class="fee-value" id="fee-receive">$0.00</span></div>
+    </div>
+    <div class="pad">
+      <div class="input-group"><label class="input-label">Recipient Full Name</label><input type="text" class="input-field" id="recipient-name" placeholder="Who is receiving?"></div>
+      <div class="input-group"><label class="input-label">Recipient Zelle (USA)</label><input type="text" class="input-field" id="recipient-zelle" placeholder="Phone or email"></div>
+      <div class="input-group"><label class="input-label">Note (Optional)</label><input type="text" class="input-field" id="send-note" placeholder="e.g. For school fees..."></div>
+      <button class="btn btn-green" onclick="proceedToAgent()">Continue — Jwenn Ajan 🤝</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="screen-agents">
+  <div class="topbar"><button class="topbar-back" onclick="goBack()">← Back</button><span class="topbar-title">Ajan — Find Agent</span><div style="width:60px"></div></div>
+  <div class="scroll-area">
+    <div class="search-bar-wrap"><span class="search-icon">🔍</span><input type="text" class="search-bar" placeholder="Search by name or location..." oninput="filterAgents(this.value)"></div>
+    <div class="filter-chips">
+      <div class="filter-chip active" onclick="filterByCountry('all',this)">🌍 All</div>
+      <div class="filter-chip" onclick="filterByCountry('haiti',this)">🇭🇹 Haiti</div>
+      <div class="filter-chip" onclick="filterByCountry('usa',this)">🇺🇸 USA</div>
+      <div class="filter-chip" onclick="filterByCountry('online',this)">🟢 Available</div>
+    </div>
+    <div class="section-title pad">Available Agents</div>
+    <div id="agents-list"><div style="text-align:center;padding:40px;color:var(--muted)">⏳ Loading...</div></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="showScreen('screen-user-home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
+    <div class="nav-item" onclick="showScreen('screen-send-money')"><span class="nav-icon">📤</span><span class="nav-label">Send</span></div>
+    <div class="nav-center-wrap"><div class="nav-center-btn">🤝</div><span class="nav-center-label">Agents</span></div>
+    <div class="nav-item" onclick="showScreen('screen-history');loadHistory()"><span class="nav-icon">📋</span><span class="nav-label">History</span></div>
+    <div class="nav-item" onclick="showScreen('screen-profile')"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></div>
+  </div>
+</div>
+
+<div class="screen" id="screen-agent-profile">
+  <div class="topbar"><button class="topbar-back" onclick="goBack()">← Back</button><span class="topbar-title">Pwofil Ajan</span><div style="width:60px"></div></div>
+  <div class="scroll-area"><div id="agent-profile-content"></div></div>
+</div>
+
+<div class="screen" id="screen-schedule">
+  <div class="topbar"><button class="topbar-back" onclick="goBack()">← Back</button><span class="topbar-title">Randevou — Schedule</span><div style="width:60px"></div></div>
+  <div class="scroll-area" style="padding-bottom:30px">
+    <div style="padding:12px 16px 0"><div id="schedule-agent-mini"></div></div>
+    <div class="section-title pad">Pick a Date</div>
+    <div class="date-grid" id="date-grid"></div>
+    <div class="section-title pad">Pick a Time</div>
+    <div class="time-grid" id="time-grid"></div>
+    <div class="pad">
+      <div class="input-group"><label class="input-label">Amount You'll Bring (USD)</label><input type="number" class="input-field" id="appt-amount" placeholder="e.g. 200"></div>
+      <div class="input-group"><label class="input-label">Note for Agent</label><input type="text" class="input-field" id="appt-note" placeholder="Optional message..."></div>
+      <button class="btn btn-green" onclick="showBookingConfirm()">Book Appointment</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="screen-track">
+  <div class="topbar"><button class="topbar-back" onclick="goBack()">← Back</button><span class="topbar-title">Track Transfer</span><div style="width:60px"></div></div>
+  <div class="scroll-area" id="track-content"></div>
+</div>
+
+<div class="screen" id="screen-history">
+  <div class="topbar"><button class="topbar-back" onclick="goBack()">← Back</button><span class="topbar-title">Istorik — History</span><div style="width:60px"></div></div>
+  <div class="scroll-area"><div id="history-list"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No transfers yet</div></div></div></div>
+</div>
+
+<div class="screen" id="screen-profile">
+  <div class="topbar"><span style="width:60px"></span><span class="topbar-title">Mon Profil</span><div style="width:60px"></div></div>
+  <div class="scroll-area">
+    <div class="profile-hero" id="profile-hero-content"></div>
+    <div class="section-title pad">Kont — Account</div>
+    <div class="menu-section">
+      <div class="menu-row" onclick="showScreen('screen-history');loadHistory()"><span class="menu-row-icon">📋</span><span class="menu-row-text">Transfer History</span><span class="menu-row-arrow">›</span></div>
+      <div class="menu-row" onclick="showScreen('screen-agents');loadAgents()"><span class="menu-row-icon">🤝</span><span class="menu-row-text">Find an Agent</span><span class="menu-row-arrow">›</span></div>
+      <div class="menu-row"><span class="menu-row-icon">❓</span><span class="menu-row-text">Support — Èd</span><span class="menu-row-arrow">›</span></div>
+    </div>
+    <div class="menu-section" style="margin-top:8px">
+      <div class="menu-row" onclick="logoutUser()" style="border-color:rgba(255,77,109,0.15)"><span class="menu-row-icon">🚪</span><span class="menu-row-text" style="color:var(--red)">Dekonekte — Sign Out</span><span class="menu-row-arrow" style="color:var(--red)">›</span></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item" onclick="showScreen('screen-user-home')"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></div>
+    <div class="nav-item" onclick="showScreen('screen-send-money')"><span class="nav-icon">📤</span><span class="nav-label">Send</span></div>
+    <div class="nav-center-wrap" onclick="showScreen('screen-agents');loadAgents()"><div class="nav-center-btn">🤝</div><span class="nav-center-label">Agents</span></div>
+    <div class="nav-item" onclick="showScreen('screen-history');loadHistory()"><span class="nav-icon">📋</span><span class="nav-label">History</span></div>
+    <div class="nav-item active"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></div>
+  </div>
+</div>
+
+<div class="screen" id="screen-agent-home">
+  <div class="topbar"><span class="topbar-logo">MoneyPon</span><span class="badge badge-gold">Agent</span><div class="topbar-icon-btn">🔔</div></div>
+  <div class="scroll-area">
+    <div class="agent-hero" id="agent-hero-content"></div>
+    <div class="section-title pad">New Requests</div>
+    <div id="agent-requests-list"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No requests yet</div></div></div>
+    <div class="section-title pad">Appointments</div>
+    <div id="agent-appointments-list"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No appointments</div></div></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item active"><span class="nav-icon">📋</span><span class="nav-label">Requests</span></div>
+    <div class="nav-center-wrap"><div class="nav-center-btn">📍</div><span class="nav-center-label">Status</span></div>
+    <div class="nav-item" onclick="logoutUser()"><span class="nav-icon">🚪</span><span class="nav-label">Sign Out</span></div>
+  </div>
+</div>
+
+<div class="screen" id="screen-admin-home">
+  <div class="topbar"><span class="topbar-logo">MoneyPon</span><span class="badge badge-red">Admin</span><div class="topbar-icon-btn" onclick="logoutUser()">🚪</div></div>
+  <div class="scroll-area">
+    <div class="admin-stats-grid">
+      <div class="admin-stat-card gold"><div class="admin-stat-icon">💰</div><div class="admin-stat-val" id="admin-total-volume">$0</div><div class="admin-stat-lbl">Total Volume</div></div>
+      <div class="admin-stat-card highlight"><div class="admin-stat-icon">📈</div><div class="admin-stat-val" id="admin-fees-earned">$0</div><div class="admin-stat-lbl">Your Fees (15%)</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-icon">🔄</div><div class="admin-stat-val" id="admin-total-tx">0</div><div class="admin-stat-lbl">Total Transfers</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-icon">⏳</div><div class="admin-stat-val" id="admin-pending-tx">0</div><div class="admin-stat-lbl">Pending Release</div></div>
+    </div>
+    <div class="section-title pad">⏳ Agent Applications</div>
+    <div id="admin-agent-applications"><div class="empty-state" style="padding:20px"><div class="empty-title">No pending applications</div></div></div>
+    <div class="section-title pad">🔐 Pending Release</div>
+    <div id="admin-pending-transactions"><div class="empty-state" style="padding:20px"><div class="empty-title">No transfers awaiting release</div></div></div>
+    <div class="section-title pad">✅ Zelle Sent — Mark Complete</div>
+    <div id="admin-processing-transactions"><div class="empty-state" style="padding:20px"><div class="empty-title">No transfers in processing</div></div></div>
+    <div class="section-title pad">👥 All Agents</div>
+    <div id="admin-all-agents"><div class="empty-state" style="padding:20px"><div class="empty-title">No agents yet</div></div></div>
+    <div class="section-title pad">📋 All Transactions</div>
+    <div id="admin-all-transactions"><div class="empty-state" style="padding:20px"><div class="empty-title">No transactions yet</div></div></div>
+    <div style="height:30px"></div>
+  </div>
+</div>
+
+<div class="screen" id="screen-pending">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:32px;text-align:center">
+    <div style="font-size:3rem;margin-bottom:16px;animation:float 3s ease-in-out infinite">⏳</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--green2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px">Application Submitted!</div>
+    <div style="font-size:0.85rem;color:var(--muted);line-height:1.7;margin-bottom:24px">Aplikasyon ou soumèt!<br><br>Your agent application is being reviewed. You'll be notified once approved (24-48 hours).</div>
+    <button class="btn btn-outline" onclick="logoutUser()">Back to Home</button>
+  </div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL='https://wjlcaxyiiswjvkortvuz.supabase.co';
+const SUPABASE_KEY='sb_publishable_G7_hLqu2KMEtlbvxEZSzSw_-4msp03j';
+const ADMIN_EMAIL='jolyjehiel@gmail.com';
+const{createClient}=supabase;
+const sb=createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null,currentProfile=null,selectedAgent=null,selectedDate=null,selectedTime=null,pendingTxData=null,allAgentsData=[],screenHistory=['screen-splash'],currentTxId=null;
+
+window.addEventListener('load',async()=>{
+  const{data:{session}}=await sb.auth.getSession();
+  if(session?.user){currentUser=session.user;await loadProfile();}
+  hideLoading();
+  sb.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='SIGNED_IN'&&session){currentUser=session.user;await loadProfile();}
+    else if(event==='SIGNED_OUT'){currentUser=null;currentProfile=null;}
+  });
+});
+
+function hideLoading(){document.getElementById('loading-overlay').classList.add('hidden');}
+
+async function loadProfile(){
+  if(!currentUser)return;
+  const{data}=await sb.from('users').select('*').eq('id',currentUser.id).single();
+  if(data){currentProfile=data;routeUser(data);}
+  else showScreen('screen-splash');
+}
+
+function routeUser(p){
+  if(p.role==='admin'){showScreen('screen-admin-home');loadAdminDashboard();}
+  else if(p.role==='agent'){showScreen('screen-agent-home');loadAgentDashboard();}
+  else if(p.role==='agent_pending')showScreen('screen-pending');
+  else{showScreen('screen-user-home');loadUserHome();}
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const t=document.getElementById(id);
+  if(t){t.classList.add('active');if(screenHistory[screenHistory.length-1]!==id)screenHistory.push(id);t.querySelector('.scroll-area')?.scrollTo(0,0);}
+}
+function goBack(){screenHistory.pop();showScreen(screenHistory[screenHistory.length-1]||'screen-splash');}
+
+async function loginUser(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-password').value;
+  if(!email||!pass){showToast('Please fill in all fields');return;}
+  showToast('Konekte...');
+  const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){showToast('Login failed: '+error.message);return;}
+  currentUser=data.user;await loadProfile();
+}
+
+async function loginAsAdmin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-password').value;
+  if(!email||!pass){showToast('Please enter credentials');return;}
+  showToast('Konekte...');
+  const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){showToast('Login failed: '+error.message);return;}
+  currentUser=data.user;
+  await sb.from('users').upsert({id:currentUser.id,email,name:'Admin',role:'admin',status:'active'});
+  currentProfile={role:'admin',name:'Admin',email};
+  showScreen('screen-admin-home');loadAdminDashboard();
+}
+
+async function registerUser(){
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const phone=document.getElementById('reg-phone').value.trim();
+  const pass=document.getElementById('reg-password').value;
+  const role=document.getElementById('reg-role').value;
+  if(!name||!email||!phone||!pass){showToast('Please fill in all fields');return;}
+  if(pass.length<6){showToast('Password must be at least 6 characters');return;}
+  showToast('Kreye kont...');
+  const{data,error}=await sb.auth.signUp({email,password:pass});
+  if(error){showToast('Error: '+error.message);return;}
+  currentUser=data.user;
+  const profile={id:currentUser.id,name,email,phone,role,status:role==='agent_pending'?'pending':'active',total_sent:0,total_transactions:0,earnings:0,rating:5.0,available:true};
+  if(role==='agent_pending'){profile.location=document.getElementById('reg-location').value;profile.zelle=document.getElementById('reg-zelle').value;}
+  await sb.from('users').insert(profile);
+  currentProfile=profile;showToast('Kont kreye!');routeUser(profile);
+}
+
+async function logoutUser(){
+  await sb.auth.signOut();currentUser=null;currentProfile=null;screenHistory=['screen-splash'];showScreen('screen-splash');showToast('Dekonekte — Signed out');
+}
+
+function toggleAgentFields(){document.getElementById('agent-extra').style.display=document.getElementById('reg-role').value==='agent_pending'?'block':'none';}
+
+async function loadUserHome(){
+  if(!currentProfile)return;
+  document.getElementById('home-user-name').textContent=currentProfile.name||'User';
+  document.getElementById('home-total-sent').textContent='$'+(currentProfile.total_sent||0).toFixed(2);
+  const{data}=await sb.from('transactions').select('*').eq('sender_id',currentUser.id).order('created_at',{ascending:false}).limit(5);
+  const list=document.getElementById('home-tx-list');
+  if(!data||!data.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No transfers yet</div><div class="empty-sub">Start your first one!</div></div>';return;}
+  list.innerHTML=data.map(d=>`<div class="tx-item" onclick="viewTransfer('${d.id}')"><div class="tx-icon-wrap" style="background:rgba(0,194,122,0.1)">📤</div><div class="tx-info"><div class="tx-title">To ${d.recipient_name||'Unknown'}</div><div class="tx-date">${formatDate(d.created_at)} • ${d.status}</div></div><div class="tx-amount" style="color:${d.status==='completed'?'var(--green2)':d.status==='flagged'?'var(--red)':'var(--gold)'}">$${d.amount}</div></div>`).join('');
+  loadProfileHero();
+}
+
+function loadProfileHero(){
+  if(!currentProfile)return;
+  document.getElementById('profile-hero-content').innerHTML=`<div class="profile-avatar">👤</div><div class="profile-name">${currentProfile.name||'User'}</div><div class="profile-email">${currentProfile.email||''}</div><div class="profile-stats"><div class="profile-stat"><div class="v">$${currentProfile.total_sent||0}</div><div class="l">Total Sent</div></div><div class="profile-stat"><div class="v">${currentProfile.total_transactions||0}</div><div class="l">Transfers</div></div></div>`;
+}
+
+function calculateTransfer(){
+  const a=parseFloat(document.getElementById('send-amount').value)||0;
+  const f=a*0.15;const r=a-f;
+  document.getElementById('receive-amount').textContent=r.toFixed(2);
+  document.getElementById('fee-send').textContent='$'+a.toFixed(2);
+  document.getElementById('fee-amount').textContent='-$'+f.toFixed(2);
+  document.getElementById('fee-receive').textContent='$'+r.toFixed(2);
+}
+
+async function proceedToAgent(){
+  const amount=parseFloat(document.getElementById('send-amount').value);
+  const recipientName=document.getElementById('recipient-name').value.trim();
+  const recipientZelle=document.getElementById('recipient-zelle').value.trim();
+  if(!amount||amount<10){showToast('Minimum transfer is $10');return;}
+  if(!recipientName){showToast('Please enter recipient name');return;}
+  if(!recipientZelle){showToast('Please enter recipient Zelle');return;}
+  pendingTxData={amount,recipientName,recipientZelle,note:document.getElementById('send-note').value,fee:amount*0.15,receiveAmount:amount*0.85};
+  showScreen('screen-agents');loadAgents();
+}
+
+async function loadAgents(){
+  const list=document.getElementById('agents-list');
+  list.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">⏳ Loading agents...</div>';
+  const{data,error}=await sb.from('users').select('*').eq('role','agent').eq('status','active');
+  if(error||!data){list.innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Could not load agents</div></div>';return;}
+  allAgentsData=data;renderAgents(data);
+}
+
+function renderAgents(agents){
+  const list=document.getElementById('agents-list');
+  if(!agents.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">🤝</div><div class="empty-title">No agents available yet</div><div class="empty-sub">Check back soon!</div></div>';return;}
+  list.innerHTML=agents.map(a=>`<div class="agent-card" onclick="viewAgentProfile('${a.id}')"><div class="agent-card-top"><div class="agent-avatar-wrap"><div class="agent-avatar">🤝</div><div class="${a.available!==false?'agent-online-dot':'agent-offline-dot'}"></div></div><div class="agent-card-info"><div class="agent-card-name">${a.name||'Agent'}</div><div class="agent-card-location">📍 ${a.location||'Unknown'}</div><div class="agent-card-rating">⭐ ${(a.rating||5.0).toFixed(1)}</div></div><button class="agent-call-btn" onclick="event.stopPropagation();openCallModal('${a.id}')">📞 Call</button></div><div class="agent-card-stats"><div class="agent-stat-pill">Tx: <span>${a.total_transactions||0}</span></div><div class="agent-stat-pill">Rating: <span>${(a.rating||5.0).toFixed(1)}⭐</span></div><div class="agent-stat-pill"><span>${a.available!==false?'🟢 Available':'🔴 Busy'}</span></div></div></div>`).join('');
+}
+
+function filterAgents(q){renderAgents(allAgentsData.filter(a=>a.name?.toLowerCase().includes(q.toLowerCase())||a.location?.toLowerCase().includes(q.toLowerCase())));}
+
+function filterByCountry(type,el){
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');
+  let f=allAgentsData;
+  if(type==='haiti')f=allAgentsData.filter(a=>a.location?.includes('Haiti'));
+  else if(type==='usa')f=allAgentsData.filter(a=>a.location?.includes('USA'));
+  else if(type==='online')f=allAgentsData.filter(a=>a.available!==false);
+  renderAgents(f);
+}
+
+function viewAgentProfile(agentId){
+  const a=allAgentsData.find(x=>x.id===agentId);if(!a)return;selectedAgent=a;
+  document.getElementById('agent-profile-content').innerHTML=`<div class="agent-profile-hero"><div class="agent-profile-avatar">🤝</div><div class="agent-profile-name">${a.name||'Agent'}</div><div class="agent-profile-location">📍 ${a.location||'Unknown'}</div><div class="agent-profile-stats"><div class="agent-stat-item"><div class="agent-stat-val">${a.total_transactions||0}</div><div class="agent-stat-lbl">Transfers</div></div><div class="agent-stat-item"><div class="agent-stat-val">${(a.rating||5.0).toFixed(1)}⭐</div><div class="agent-stat-lbl">Rating</div></div><div class="agent-stat-item"><div class="agent-stat-val">${a.available!==false?'🟢':'🔴'}</div><div class="agent-stat-lbl">${a.available!==false?'Online':'Busy'}</div></div></div></div><div style="margin:0 16px"><div class="card" style="padding:14px"><div class="info-row"><span class="info-row-label">📍 Location</span><span class="info-row-value">${a.location||'N/A'}</span></div><div class="info-row"><span class="info-row-label">📞 Phone</span><span class="info-row-value" style="color:var(--green2)">${a.phone||'N/A'}</span></div><div class="info-row"><span class="info-row-label">💳 Zelle/MonCash</span><span class="info-row-value">${a.zelle||'N/A'}</span></div><div class="info-row"><span class="info-row-label">⏰ Hours</span><span class="info-row-value">${a.hours||'8AM - 8PM'}</span></div></div><div style="margin-top:12px;display:flex;gap:10px"><button class="btn btn-outline" style="flex:1" onclick="openCallModal('${a.id}')">📞 Call Agent</button><button class="btn btn-green" style="flex:1" onclick="goToSchedule('${a.id}')">📅 Book</button></div></div>`;
+  showScreen('screen-agent-profile');
+}
+
+function openCallModal(agentId){
+  const a=allAgentsData.find(x=>x.id===agentId);if(!a)return;selectedAgent=a;
+  document.getElementById('modal-agent-info').innerHTML=`<div style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)"><div style="font-size:0.9rem;font-weight:700;margin-bottom:4px">${a.name}</div><div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px">📍 ${a.location}</div><div style="font-size:1rem;color:var(--green2);font-weight:700">📞 ${a.phone||'N/A'}</div></div>`;
+  document.getElementById('modal-call-btn').setAttribute('data-phone',a.phone||'');openModal('modal-call-agent');
+}
+function callAgent(){const p=document.getElementById('modal-call-btn').getAttribute('data-phone');if(p)window.location.href='tel:'+p;else showToast('No phone number available');closeModal('modal-call-agent');}
+
+function goToSchedule(agentId){
+  const a=allAgentsData.find(x=>x.id===agentId);if(!a)return;selectedAgent=a;
+  document.getElementById('schedule-agent-mini').innerHTML=`<div style="background:var(--card);border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;border:1px solid rgba(0,194,122,0.12);margin-bottom:4px"><div style="width:36px;height:36px;background:rgba(0,194,122,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem">🤝</div><div><div style="font-size:0.85rem;font-weight:700">${a.name}</div><div style="font-size:0.65rem;color:var(--muted)">📍 ${a.location}</div></div></div>`;
+  renderDateGrid();renderTimeGrid();showScreen('screen-schedule');
+}
+
+function renderDateGrid(){
+  const days=['Su','Mo','Tu','We','Th','Fr','Sa'];const today=new Date();
+  document.getElementById('date-grid').innerHTML=Array.from({length:14},(_,i)=>{const d=new Date(today);d.setDate(today.getDate()+i);const s=d.toISOString().split('T')[0];return`<div class="date-cell" onclick="selectDate('${s}',this)"><div class="date-day">${days[d.getDay()]}</div><div class="date-num">${d.getDate()}</div></div>`;}).join('');
+}
+
+function renderTimeGrid(){
+  const times=['8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM','7:00 PM'];
+  document.getElementById('time-grid').innerHTML=times.map(t=>`<div class="time-cell" onclick="selectTime('${t}',this)">${t}</div>`).join('');
+}
+
+function selectDate(d,el){document.querySelectorAll('.date-cell').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedDate=d;}
+function selectTime(t,el){document.querySelectorAll('.time-cell').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedTime=t;}
+
+function showBookingConfirm(){
+  const amount=document.getElementById('appt-amount').value;
+  if(!selectedDate){showToast('Please select a date');return;}
+  if(!selectedTime){showToast('Please select a time');return;}
+  if(!amount||amount<10){showToast('Please enter amount');return;}
+  document.getElementById('book-summary').innerHTML=`<div style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)"><div class="fee-row"><span class="fee-label">Agent</span><span class="fee-value">${selectedAgent?.name}</span></div><div class="fee-row"><span class="fee-label">Date</span><span class="fee-value">${selectedDate}</span></div><div class="fee-row"><span class="fee-label">Time</span><span class="fee-value">${selectedTime}</span></div><div class="fee-row"><span class="fee-label">Amount</span><span class="fee-value" style="color:var(--gold)">$${amount}</span></div></div>`;
+  openModal('modal-book-confirm');
+}
+
+async function confirmBooking(){
+  const amount=parseFloat(document.getElementById('appt-amount').value);const note=document.getElementById('appt-note').value;
+  if(!currentUser||!selectedAgent)return;
+  await sb.from('appointments').insert({user_id:currentUser.id,user_name:currentProfile.name,agent_id:selectedAgent.id,agent_name:selectedAgent.name,agent_location:selectedAgent.location,date:selectedDate,time:selectedTime,amount,note,status:'scheduled'});
+  const{data:tx}=await sb.from('transactions').insert({sender_id:currentUser.id,sender_name:currentProfile.name,agent_id:selectedAgent.id,agent_name:selectedAgent.name,amount,fee:amount*0.15,receive_amount:amount*0.85,recipient_name:pendingTxData?.recipientName||'N/A',recipient_zelle:pendingTxData?.recipientZelle||'N/A',note,status:'scheduled'}).select().single();
+  closeModal('modal-book-confirm');showToast('✅ Appointment booked! Randevou rezève!');
+  if(tx)viewTransfer(tx.id);
+}
+
+async function viewTransfer(txId){
+  currentTxId=txId;showScreen('screen-track');
+  const content=document.getElementById('track-content');
+  content.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>';
+  const{data:d}=await sb.from('transactions').select('*').eq('id',txId).single();
+  if(!d){content.innerHTML='<div class="empty-state"><div class="empty-title">Transfer not found</div></div>';return;}
+  const statusMap={scheduled:{icon:'📅',label:'Appointment Scheduled',color:'var(--blue)'},cash_confirmed:{icon:'💵',label:'Cash Confirmed',color:'var(--gold)'},processing:{icon:'🔄',label:'Processing',color:'var(--gold)'},completed:{icon:'✅',label:'Completed',color:'var(--green2)'},flagged:{icon:'🚩',label:'Flagged',color:'var(--red)'}};
+  const st=statusMap[d.status]||statusMap.scheduled;
+  const steps=[{label:'Transfer Requested',sub:formatDate(d.created_at),done:true},{label:'Appointment Scheduled',sub:d.agent_name?`With ${d.agent_name}`:'Agent assigned',done:true},{label:'Cash Received by Agent',sub:d.cash_confirmed_at?formatDate(d.cash_confirmed_at):'Waiting for agent...',done:['cash_confirmed','processing','completed'].includes(d.status),active:d.status==='scheduled'},{label:'Admin Verified & Released',sub:d.released_at?formatDate(d.released_at):'Awaiting admin review...',done:['processing','completed'].includes(d.status),active:d.status==='cash_confirmed'},{label:'Zelle Sent to Recipient',sub:d.completed_at?formatDate(d.completed_at):'Pending...',done:d.status==='completed',active:d.status==='processing'}];
+  content.innerHTML=`<div class="transfer-status-card"><div class="transfer-status-icon">${st.icon}</div><div class="transfer-ref">TXN-${txId.slice(0,8).toUpperCase()}</div><div class="transfer-amount">$${d.amount} → $${(d.receive_amount||d.amount*0.85).toFixed(2)}</div><span class="badge" style="background:rgba(255,255,255,0.08);color:${st.color};border:1px solid ${st.color}40">${st.label}</span></div><div style="padding:0 16px"><div class="section-title">Transfer Details</div><div class="card" style="padding:14px;margin-bottom:14px"><div class="fee-row"><span class="fee-label">To</span><span class="fee-value">${d.recipient_name}</span></div><div class="fee-row"><span class="fee-label">Zelle</span><span class="fee-value">${d.recipient_zelle}</span></div><div class="fee-row"><span class="fee-label">Amount Sent</span><span class="fee-value">$${d.amount}</span></div><div class="fee-row"><span class="fee-label">Fee (15%)</span><span class="fee-value" style="color:var(--red)">-$${d.fee?.toFixed(2)}</span></div><div class="fee-divider"></div><div class="fee-total"><span>Recipient Gets</span><span class="fee-value">$${d.receive_amount?.toFixed(2)}</span></div></div><div class="section-title">Progress</div><div class="timeline">${steps.map((s,i)=>`<div class="tl-item"><div class="tl-left"><div class="tl-dot ${s.done?'done':s.active?'active':'waiting'}">${s.done?'✓':s.active?'●':'○'}</div>${i<steps.length-1?`<div class="tl-line ${s.done?'done':''}"></div>`:''}</div><div class="tl-right"><div class="tl-title ${s.active?'active':!s.done?'waiting':''}">${s.label}</div><div class="tl-sub">${s.sub}</div></div></div>`).join('')}</div></div>`;
+}
+
+async function loadHistory(){
+  if(!currentUser)return;
+  const list=document.getElementById('history-list');
+  list.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Loading...</div>';
+  const{data}=await sb.from('transactions').select('*').eq('sender_id',currentUser.id).order('created_at',{ascending:false});
+  if(!data||!data.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No transfers yet</div></div>';return;}
+  const badges={completed:'badge-green',flagged:'badge-red',processing:'badge-gold',cash_confirmed:'badge-gold',scheduled:'badge-blue',pending:'badge-muted'};
+  list.innerHTML=data.map(d=>`<div class="history-item" onclick="viewTransfer('${d.id}')"><div class="history-item-top"><span class="history-item-name">To ${d.recipient_name}</span><span class="badge ${badges[d.status]||'badge-muted'}">${d.status}</span></div><div class="history-item-bottom"><span class="history-item-meta">${formatDate(d.created_at)}</span><span class="history-item-amount">$${d.amount}</span></div></div>`).join('');
+}
+
+async function loadAgentDashboard(){
+  if(!currentProfile)return;
+  document.getElementById('agent-hero-content').innerHTML=`<div class="agent-hero-top"><div class="agent-hero-icon">🏅</div><div><div class="agent-hero-name">${currentProfile.name}</div><div class="agent-hero-region">📍 ${currentProfile.location||'Location not set'}</div></div></div><div class="agent-hero-stats"><div class="agent-hero-stat"><div class="v">$${currentProfile.earnings||0}</div><div class="l">Earnings</div></div><div class="agent-hero-stat"><div class="v">${currentProfile.total_transactions||0}</div><div class="l">Done</div></div><div class="agent-hero-stat"><div class="v">${(currentProfile.rating||5.0).toFixed(1)}⭐</div><div class="l">Rating</div></div></div>`;
+  const{data:requests}=await sb.from('transactions').select('*').eq('agent_id',currentUser.id).eq('status','scheduled').order('created_at',{ascending:false});
+  const reqList=document.getElementById('agent-requests-list');
+  if(!requests||!requests.length)reqList.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No requests yet</div></div>';
+  else{
+    // Load sender phone numbers for each request
+    const senderIds = requests.map(d=>d.sender_id);
+    const {data: senderProfiles} = await sb.from('users').select('id,name,phone').in('id', senderIds);
+    const senderMap = {};
+    (senderProfiles||[]).forEach(u=>senderMap[u.id]=u);
+    // Load appointments for each transaction
+    const txIds = requests.map(d=>d.id);
+    const {data: apptData} = await sb.from('appointments').select('*').in('user_id', senderIds).eq('status','scheduled');
+    const apptMap = {};
+    (apptData||[]).forEach(a=>apptMap[a.user_id]=a);
+    reqList.innerHTML=requests.map(d=>{
+      const sender = senderMap[d.sender_id]||{};
+      const appt = apptMap[d.sender_id]||{};
+      return `<div class="request-card">
+        <div class="request-card-top"><span class="request-ref">TXN-${d.id.slice(0,8).toUpperCase()}</span><span class="badge badge-gold">Scheduled</span></div>
+        <div class="request-amount">$${d.amount} USD</div>
+        <div class="request-route">🇭🇹 Haiti → 🇺🇸 USA • Zelle to ${d.recipient_name}</div>
+        <div style="background:rgba(0,194,122,0.06);border:1px solid rgba(0,194,122,0.12);border-radius:10px;padding:10px;margin-bottom:10px">
+          <div style="font-size:0.68rem;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px">👤 User Info</div>
+          <div style="font-size:0.82rem;font-weight:700;margin-bottom:4px">${sender.name||d.sender_name}</div>
+          <div style="font-size:0.78rem;color:var(--green2);margin-bottom:${appt.date?'4px':'0'}">📞 ${sender.phone||'No phone provided'}</div>
+          ${appt.date?`<div style="font-size:0.75rem;color:var(--gold);margin-top:4px">📅 Meeting: ${appt.date} at ${appt.time}</div>`:''}
+          ${appt.note?`<div style="font-size:0.72rem;color:var(--muted);margin-top:4px">💬 "${appt.note}"</div>`:''}
+          ${d.note?`<div style="font-size:0.72rem;color:var(--muted);margin-top:4px">📝 Note: ${d.note}</div>`:''}
+        </div>
+        <div class="request-btns">
+          <button class="req-btn-confirm" onclick="openConfirmCash('${d.id}',${d.amount})">✅ I Received Cash</button>
+          <button class="req-btn-decline" onclick="declineRequest('${d.id}')">✕ Decline</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  const{data:appts}=await sb.from('appointments').select('*').eq('agent_id',currentUser.id).eq('status','scheduled');
+  const apptList=document.getElementById('agent-appointments-list');
+  if(!appts||!appts.length)apptList.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No appointments</div></div>';
+  else{
+    const apptUserIds = appts.map(a=>a.user_id);
+    const {data: apptUsers} = await sb.from('users').select('id,phone').in('id', apptUserIds);
+    const apptUserMap = {};
+    (apptUsers||[]).forEach(u=>apptUserMap[u.id]=u);
+    apptList.innerHTML=appts.map(d=>{
+      const u = apptUserMap[d.user_id]||{};
+      return `<div class="request-card">
+        <div class="request-card-top"><span class="request-ref">APT-${d.id.slice(0,8).toUpperCase()}</span><span class="badge badge-blue">Scheduled</span></div>
+        <div class="request-amount">$${d.amount} Cash</div>
+        <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:10px;padding:10px;margin-bottom:8px">
+          <div style="font-size:0.82rem;font-weight:700;margin-bottom:4px">👤 ${d.user_name}</div>
+          <div style="font-size:0.78rem;color:var(--blue)">📞 ${u.phone||'No phone provided'}</div>
+          <div style="font-size:0.75rem;color:var(--gold);margin-top:4px">📅 ${d.date} at ${d.time}</div>
+          ${d.note?`<div style="font-size:0.72rem;color:var(--muted);margin-top:4px">💬 "${d.note}"</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function openConfirmCash(txId,amount){document.getElementById('confirm-cash-txid').value=txId;document.getElementById('confirm-cash-amount').value=amount;openModal('modal-confirm-cash');}
+
+async function submitCashConfirmation(){
+  const txId=document.getElementById('confirm-cash-txid').value;
+  const amount=parseFloat(document.getElementById('confirm-cash-amount').value);
+  if(!amount){showToast('Please enter the amount');return;}
+  await sb.from('transactions').update({status:'cash_confirmed',cash_confirmed_at:new Date().toISOString(),confirmed_amount:amount}).eq('id',txId);
+  closeModal('modal-confirm-cash');showToast('✅ Cash confirmed! Admin notified.');loadAgentDashboard();
+}
+
+async function declineRequest(txId){await sb.from('transactions').update({status:'declined'}).eq('id',txId);showToast('Request declined');loadAgentDashboard();}
+
+async function loadAdminDashboard(){
+  const{data:txAll}=await sb.from('transactions').select('*');
+  let vol=0,fees=0,pending=0;
+  (txAll||[]).forEach(t=>{vol+=t.amount||0;fees+=(t.amount||0)*0.15;if(t.status==='cash_confirmed')pending++;});
+  document.getElementById('admin-total-volume').textContent='$'+vol.toFixed(0);
+  document.getElementById('admin-fees-earned').textContent='$'+fees.toFixed(0);
+  document.getElementById('admin-total-tx').textContent=txAll?.length||0;
+  document.getElementById('admin-pending-tx').textContent=pending;
+  const{data:apps}=await sb.from('users').select('*').eq('role','agent_pending');
+  const appsEl=document.getElementById('admin-agent-applications');
+  appsEl.innerHTML=(!apps||!apps.length)?'<div class="empty-state" style="padding:20px"><div class="empty-title">No pending applications</div></div>':apps.map(a=>`<div class="admin-action-row"><div class="admin-action-info"><div class="admin-action-name">${a.name} <span class="badge badge-muted">Pending</span></div><div class="admin-action-sub">📍 ${a.location||'?'} • 📞 ${a.phone||'?'}</div></div><div class="admin-action-btns"><button class="admin-btn-approve" onclick="approveAgent('${a.id}')">✓ Approve</button><button class="admin-btn-reject" onclick="rejectAgent('${a.id}')">✗ Reject</button></div></div>`).join('');
+  const processingTxs=(txAll||[]).filter(t=>t.status==='processing');const pendingTxs=(txAll||[]).filter(t=>t.status==='cash_confirmed');
+  const pendEl=document.getElementById('admin-pending-transactions');
+  pendEl.innerHTML=!pendingTxs.length?'<div class="empty-state" style="padding:20px"><div class="empty-title">No transfers awaiting release</div></div>':pendingTxs.map(d=>`<div class="admin-action-row"><div class="admin-action-info"><div class="admin-action-name">$${d.amount} → $${(d.receive_amount||d.amount*0.85).toFixed(2)} <span class="badge badge-gold">Cash Confirmed</span></div><div class="admin-action-sub">To: ${d.recipient_name} • ${d.recipient_zelle}</div></div><div class="admin-action-btns"><button class="admin-btn-approve" onclick="openReleaseModal('${d.id}')">Release</button></div></div>`).join('');
+  const procEl=document.getElementById('admin-processing-transactions');
+  procEl.innerHTML=!processingTxs.length?'<div class="empty-state" style="padding:20px"><div class="empty-title">No transfers in processing</div></div>':processingTxs.map(d=>`<div class="admin-action-row"><div class="admin-action-info"><div class="admin-action-name">$${d.amount} → $${(d.receive_amount||d.amount*0.85).toFixed(2)} <span class="badge badge-blue">Zelle Sent ✅</span></div><div class="admin-action-sub">To: ${d.recipient_name} • ${d.recipient_zelle}</div></div><div class="admin-action-btns"><button class="admin-btn-approve" onclick="markComplete('${d.id}')">✅ Mark Done</button></div></div>`).join('');
+  const{data:agents}=await sb.from('users').select('*').in('role',['agent','agent_pending']);
+  const agentsEl=document.getElementById('admin-all-agents');
+  agentsEl.innerHTML=(!agents||!agents.length)?'<div class="empty-state" style="padding:20px"><div class="empty-title">No agents yet</div></div>':agents.map(a=>`<div class="admin-action-row"><div class="admin-action-info"><div class="admin-action-name">${a.name} <span class="badge ${a.status==='active'?'badge-green':a.status==='blocked'?'badge-red':'badge-muted'}">${a.status||a.role}</span></div><div class="admin-action-sub">📍 ${a.location||'?'} • ${a.total_transactions||0} transfers</div></div><div class="admin-action-btns">${a.status==='active'?`<button class="admin-btn-block" onclick="blockAgent('${a.id}')">Block</button>`:''}${a.status==='blocked'?`<button class="admin-btn-approve" onclick="unblockAgent('${a.id}')">Unblock</button>`:''}</div></div>`).join('');
+  const allTxEl=document.getElementById('admin-all-transactions');
+  const sorted=(txAll||[]).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  allTxEl.innerHTML=!sorted.length?'<div class="empty-state" style="padding:20px"><div class="empty-title">No transactions yet</div></div>':sorted.slice(0,20).map(d=>`<div class="admin-action-row"><div class="admin-action-info"><div class="admin-action-name">$${d.amount} <span class="badge ${d.status==='completed'?'badge-green':d.status==='flagged'?'badge-red':'badge-gold'}">${d.status}</span></div><div class="admin-action-sub">From: ${d.sender_name} → To: ${d.recipient_name}</div></div><div class="admin-action-btns"><button class="admin-btn-approve" onclick="viewTransfer('${d.id}')">View</button></div></div>`).join('');
+}
+
+async function markComplete(txId){await sb.from('transactions').update({status:'completed',completed_at:new Date().toISOString()}).eq('id',txId);showToast('✅ Transfer marked complete!');loadAdminDashboard();}
+async function markComplete(txId){await sb.from('transactions').update({status:'completed',completed_at:new Date().toISOString()}).eq('id',txId);showToast('✅ Transfer marked complete!');loadAdminDashboard();}
+async function approveAgent(uid){await sb.from('users').update({role:'agent',status:'active'}).eq('id',uid);showToast('✅ Agent approved!');loadAdminDashboard();}
+async function rejectAgent(uid){await sb.from('users').update({role:'user',status:'rejected'}).eq('id',uid);showToast('Agent rejected');loadAdminDashboard();}
+async function blockAgent(uid){await sb.from('users').update({status:'blocked'}).eq('id',uid);showToast('🚫 Agent blocked');loadAdminDashboard();}
+async function unblockAgent(uid){await sb.from('users').update({status:'active'}).eq('id',uid);showToast('✅ Agent unblocked');loadAdminDashboard();}
+
+function openReleaseModal(txId){
+  currentTxId=txId;
+  document.getElementById('release-info').innerHTML=`<div style="background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--border)"><div style="font-size:0.8rem;color:var(--muted);margin-bottom:4px">Transaction ID</div><div style="font-size:0.85rem;font-weight:700;font-family:monospace">TXN-${txId.slice(0,8).toUpperCase()}</div></div>`;
+  openModal('modal-admin-release');
+}
+async function releaseTx(){if(!currentTxId)return;await sb.from('transactions').update({status:'processing',released_at:new Date().toISOString()}).eq('id',currentTxId);closeModal('modal-admin-release');showToast('🚀 Transfer released!');loadAdminDashboard();}
+async function flagTx(){if(!currentTxId)return;await sb.from('transactions').update({status:'flagged',flagged_at:new Date().toISOString()}).eq('id',currentTxId);closeModal('modal-admin-release');showToast('🚩 Transaction flagged');loadAdminDashboard();}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+function formatDate(ts){if(!ts)return'Just now';return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+</script>
+</body>
+</html>
