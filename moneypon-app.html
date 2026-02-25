@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MoneyPon — Pon Lajan Ou</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://wjlcaxyiiswjvkortvuz.supabase.co">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 <style>
@@ -72,6 +76,8 @@ select.input-field option{background:var(--card)}
 .modal-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:800;margin-bottom:16px;color:var(--gold)}
 .live-dot{display:inline-block;width:6px;height:6px;background:var(--green2);border-radius:50%;animation:blink 2s infinite}
 #screen-splash{background:var(--bg);align-items:center;justify-content:center}
+.skeleton{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .splash-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(0,194,122,0.08) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(240,180,41,0.06) 0%,transparent 60%)}
 .splash-content{position:relative;z-index:1;text-align:center;padding:40px 32px;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:center}
 .splash-logo{font-family:'Playfair Display',serif;font-size:3rem;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--green2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
@@ -568,6 +574,12 @@ const{createClient}=supabase;
 const sb=createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser=null,currentProfile=null,selectedAgent=null,selectedDate=null,selectedTime=null,pendingTxData=null,allAgentsData=[],screenHistory=['screen-splash'],currentTxId=null;
 
+// ===== CACHE SYSTEM =====
+const cache = {};
+function setCache(key, data, ttl=30000){ cache[key]={data, expires: Date.now()+ttl}; }
+function getCache(key){ const c=cache[key]; if(c && Date.now()<c.expires) return c.data; return null; }
+function clearCache(key){ if(key) delete cache[key]; else Object.keys(cache).forEach(k=>delete cache[k]); }
+
 window.addEventListener('load',async()=>{
   const{data:{session}}=await sb.auth.getSession();
   if(session?.user){currentUser=session.user;await loadProfile();}
@@ -652,11 +664,20 @@ async function loadUserHome(){
   if(!currentProfile)return;
   document.getElementById('home-user-name').textContent=currentProfile.name||'User';
   document.getElementById('home-total-sent').textContent='$'+(currentProfile.total_sent||0).toFixed(2);
-  const{data}=await sb.from('transactions').select('*').eq('sender_id',currentUser.id).order('created_at',{ascending:false}).limit(5);
+  const cacheKey='home_tx_'+currentUser.id;
+  const cached=getCache(cacheKey);
+  const list=document.getElementById('home-tx-list');
+  if(cached){renderHomeTx(cached,list); loadProfileHero(); return;}
+  const{data}=await sb.from('transactions').select('id,recipient_name,amount,status,created_at').eq('sender_id',currentUser.id).order('created_at',{ascending:false}).limit(5);
+  setCache(cacheKey, data, 15000);
   const list=document.getElementById('home-tx-list');
   if(!data||!data.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No transfers yet</div><div class="empty-sub">Start your first one!</div></div>';return;}
-  list.innerHTML=data.map(d=>`<div class="tx-item" onclick="viewTransfer('${d.id}')"><div class="tx-icon-wrap" style="background:rgba(0,194,122,0.1)">📤</div><div class="tx-info"><div class="tx-title">To ${d.recipient_name||'Unknown'}</div><div class="tx-date">${formatDate(d.created_at)} • ${d.status}</div></div><div class="tx-amount" style="color:${d.status==='completed'?'var(--green2)':d.status==='flagged'?'var(--red)':'var(--gold)'}">$${d.amount}</div></div>`).join('');
+  renderHomeTx(data,list);
   loadProfileHero();
+}
+function renderHomeTx(data,list){
+  if(!data||!data.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No transfers yet</div><div class="empty-sub">Start your first one!</div></div>';return;}
+  list.innerHTML=data.map(d=>`<div class="tx-item" onclick="viewTransfer('${d.id}')"><div class="tx-icon-wrap" style="background:rgba(0,194,122,0.1)">📤</div><div class="tx-info"><div class="tx-title">To ${d.recipient_name||'Unknown'}</div><div class="tx-date">${formatDate(d.created_at)} • ${d.status}</div></div><div class="tx-amount" style="color:${d.status==='completed'?'var(--green2)':d.status==='flagged'?'var(--red)':'var(--gold)'}">$${d.amount}</div></div>`).join('');
 }
 
 function loadProfileHero(){
@@ -686,9 +707,12 @@ async function proceedToAgent(){
 
 async function loadAgents(){
   const list=document.getElementById('agents-list');
+  const cached = getCache('agents');
+  if(cached){ allAgentsData=cached; renderAgents(cached); return; }
   list.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">⏳ Loading agents...</div>';
-  const{data,error}=await sb.from('users').select('*').eq('role','agent').eq('status','active');
+  const{data,error}=await sb.from('users').select('id,name,phone,location,rating,total_transactions,available,zelle,hours').eq('role','agent').eq('status','active');
   if(error||!data){list.innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Could not load agents</div></div>';return;}
+  setCache('agents', data, 60000);
   allAgentsData=data;renderAgents(data);
 }
 
@@ -755,6 +779,7 @@ async function confirmBooking(){
   if(!currentUser||!selectedAgent)return;
   await sb.from('appointments').insert({user_id:currentUser.id,user_name:currentProfile.name,agent_id:selectedAgent.id,agent_name:selectedAgent.name,agent_location:selectedAgent.location,date:selectedDate,time:selectedTime,amount,note,status:'scheduled'});
   const{data:tx}=await sb.from('transactions').insert({sender_id:currentUser.id,sender_name:currentProfile.name,agent_id:selectedAgent.id,agent_name:selectedAgent.name,amount,fee:amount*0.15,receive_amount:amount*0.85,recipient_name:pendingTxData?.recipientName||'N/A',recipient_zelle:pendingTxData?.recipientZelle||'N/A',note,status:'scheduled'}).select().single();
+  clearCache('home_tx_'+currentUser.id);clearCache('history_'+currentUser.id);
   closeModal('modal-book-confirm');showToast('✅ Appointment booked! Randevou rezève!');
   if(tx)viewTransfer(tx.id);
 }
@@ -774,8 +799,16 @@ async function viewTransfer(txId){
 async function loadHistory(){
   if(!currentUser)return;
   const list=document.getElementById('history-list');
+  const cacheKey='history_'+currentUser.id;
+  const cached=getCache(cacheKey);
+  if(cached){renderHistory(cached,list);return;}
   list.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Loading...</div>';
-  const{data}=await sb.from('transactions').select('*').eq('sender_id',currentUser.id).order('created_at',{ascending:false});
+  const{data}=await sb.from('transactions').select('id,recipient_name,amount,status,created_at').eq('sender_id',currentUser.id).order('created_at',{ascending:false});
+  setCache(cacheKey,data,15000);
+  if(!data||!data.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No transfers yet</div></div>';return;}
+  renderHistory(data,list);
+}
+function renderHistory(data,list){
   if(!data||!data.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No transfers yet</div></div>';return;}
   const badges={completed:'badge-green',flagged:'badge-red',processing:'badge-gold',cash_confirmed:'badge-gold',scheduled:'badge-blue',pending:'badge-muted'};
   list.innerHTML=data.map(d=>`<div class="history-item" onclick="viewTransfer('${d.id}')"><div class="history-item-top"><span class="history-item-name">To ${d.recipient_name}</span><span class="badge ${badges[d.status]||'badge-muted'}">${d.status}</span></div><div class="history-item-bottom"><span class="history-item-meta">${formatDate(d.created_at)}</span><span class="history-item-amount">$${d.amount}</span></div></div>`).join('');
@@ -851,13 +884,13 @@ async function submitCashConfirmation(){
   const amount=parseFloat(document.getElementById('confirm-cash-amount').value);
   if(!amount){showToast('Please enter the amount');return;}
   await sb.from('transactions').update({status:'cash_confirmed',cash_confirmed_at:new Date().toISOString(),confirmed_amount:amount}).eq('id',txId);
-  closeModal('modal-confirm-cash');showToast('✅ Cash confirmed! Admin notified.');loadAgentDashboard();
+  clearCache('agents');closeModal('modal-confirm-cash');showToast('✅ Cash confirmed! Admin notified.');loadAgentDashboard();
 }
 
 async function declineRequest(txId){await sb.from('transactions').update({status:'declined'}).eq('id',txId);showToast('Request declined');loadAgentDashboard();}
 
 async function loadAdminDashboard(){
-  const{data:txAll}=await sb.from('transactions').select('*');
+  const{data:txAll}=await sb.from('transactions').select('id,sender_name,recipient_name,recipient_zelle,amount,fee,receive_amount,status,created_at');
   let vol=0,fees=0,pending=0;
   (txAll||[]).forEach(t=>{vol+=t.amount||0;fees+=(t.amount||0)*0.15;if(t.status==='cash_confirmed')pending++;});
   document.getElementById('admin-total-volume').textContent='$'+vol.toFixed(0);
