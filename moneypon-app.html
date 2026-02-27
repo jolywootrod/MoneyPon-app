@@ -1058,10 +1058,13 @@ async function loadAdminDashboard(){
             <div style="font-size:0.52rem;color:var(--muted)">Comm.</div>
           </div>
         </div>
-        <div style="display:flex;gap:6px">
-          <button class="admin-btn-approve" style="flex:1" onclick="openPayAgentModal('${a.id}','${a.name}','${owed}')">💵 Pay $${owed}</button>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <button class="admin-btn-approve" style="flex:2" onclick="openPayAgentModal('${a.id}','${a.name}','${owed}')">💵 Pay $${owed}</button>
           <button class="admin-btn-approve" style="flex:1;background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.25);color:var(--blue)" onclick="setCommission('${a.id}','${a.name}',${commRate})">% ${commRate}</button>
-          ${a.status==='active'?`<button class="admin-btn-block" onclick="blockAgent('${a.id}')">Block</button>`:`<button class="admin-btn-approve" onclick="unblockAgent('${a.id}')">Unblock</button>`}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="admin-btn-block" style="flex:1;background:rgba(255,165,0,0.1);border-color:rgba(255,165,0,0.2);color:orange" onclick="resetAgentDashboard('${a.id}','${a.name}')">🔄 Reset After Payroll</button>
+          ${a.status===`active`?`<button class="admin-btn-block" onclick="blockAgent('${a.id}')">Block</button>`:`<button class="admin-btn-approve" onclick="unblockAgent('${a.id}')">Unblock</button>`}
         </div>
       </div>`;
     }).join('');
@@ -1153,12 +1156,26 @@ async function saveCommission(){
 
 // Reset agent dashboard
 async function resetAgentDashboard(agentId, agentName){
-  if(!confirm('Reset all transactions and stats for '+agentName+'? This cannot be undone.'))return;
-  await sb.from('transactions').delete().eq('agent_id',agentId);
-  await sb.from('appointments').delete().eq('agent_id',agentId);
-  await sb.from('agent_payments').delete().eq('agent_id',agentId);
-  await sb.from('users').update({total_transactions:0,earnings:0,total_sent:0}).eq('id',agentId);
-  showToast('🔄 '+agentName+' dashboard reset!');
+  if(!confirm('Reset payroll stats for '+agentName+'?\nThis clears their earnings counter so they start fresh after being paid.'))return;
+  // Delete only the payment records (resets the "owed" counter back to full earned)
+  // Actually we mark a full payment of whatever is owed, then add a reset marker
+  // Best approach: delete agent_payments so owed = earned again, then
+  // insert a special "PAYROLL RESET" payment to mark the event
+  const{data:agentData}=await sb.from('users').select('commission_rate').eq('id',agentId).single();
+  const{data:agentTx}=await sb.from('transactions').select('amount,status').eq('agent_id',agentId);
+  const volume=(agentTx||[]).reduce((s,t)=>s+(t.amount||0),0);
+  const commRate=(agentData?.commission_rate)||30;
+  const totalEarned=volume*0.15*(commRate/100);
+  
+  // Record the final payroll payment to close the books
+  await sb.from('agent_payments').insert({
+    agent_id:agentId,
+    agent_name:agentName,
+    amount:totalEarned,
+    note:'🔄 PAYROLL RESET — Full settlement',
+    paid_by:'Admin'
+  });
+  showToast('✅ '+agentName+' payroll reset! They now start fresh.');
   loadAdminDashboard();
 }
 
