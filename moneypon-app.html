@@ -690,7 +690,20 @@ async function loadAgents(){
 function renderAgents(agents){
   const list=document.getElementById('agents-list');
   if(!agents.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">🤝</div><div class="empty-title">No agents available yet</div></div>';return;}
-  list.innerHTML=agents.map(a=>`<div class="agent-card" onclick="viewAgentProfile('${a.id}')"><div class="agent-card-top"><div class="agent-avatar">🤝<div class="agent-online-dot" style="background:${a.available!==false?'var(--green2)':'var(--muted)'}"></div></div><div class="agent-card-info"><div class="agent-card-name">${a.name||'Agent'}</div><div class="agent-card-location">📍 ${a.location||'Unknown'}</div><div style="font-size:0.68rem;color:var(--gold);font-weight:700">⭐ ${(a.rating||5.0).toFixed(1)}</div></div><button class="agent-call-btn" onclick="event.stopPropagation();openCallModal('${a.id}')">📞 Call</button></div><div class="agent-card-stats"><div class="agent-stat-pill">Transfers: <span>${a.total_transactions||0}</span></div><div class="agent-stat-pill"><span>${a.available!==false?'🟢 Available':'🔴 Busy'}</span></div></div></div>`).join('');
+  list.innerHTML=agents.map(a=>`<div class="agent-card">
+    <div class="agent-card-top" onclick="viewAgentProfile('${a.id}')">
+      <div class="agent-avatar">🤝<div class="agent-online-dot" style="background:${a.available!==false?'var(--green2)':'var(--muted)'}"></div></div>
+      <div class="agent-card-info">
+        <div class="agent-card-name">${a.name||'Agent'}</div>
+        <div class="agent-card-location">📍 ${a.location||'Unknown'}</div>
+        <div style="font-size:0.68rem;color:var(--gold);font-weight:700">⭐ ${(a.rating||5.0).toFixed(1)} • ${a.total_transactions||0} transfers</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button style="flex:1;padding:9px;background:rgba(0,194,122,0.1);border:1px solid rgba(0,194,122,0.2);color:var(--green2);border-radius:10px;font-size:0.78rem;font-weight:700;cursor:pointer" onclick="openCallModal('${a.id}')">📞 Call Agent</button>
+      <button style="flex:1;padding:9px;background:linear-gradient(135deg,var(--green),var(--green2));border:none;color:#fff;border-radius:10px;font-size:0.78rem;font-weight:700;cursor:pointer" onclick="goToSchedule('${a.id}')">📅 Book</button>
+    </div>
+  </div>`).join('');
 }
 
 function filterAgents(q){renderAgents(allAgentsData.filter(a=>a.name?.toLowerCase().includes(q.toLowerCase())||a.location?.toLowerCase().includes(q.toLowerCase())));}
@@ -873,23 +886,28 @@ async function loadAgentDashboard(){
     }).join('');
   }
 
-  const{data:appts}=await sb.from('appointments').select('*').eq('agent_id',currentUser.id).eq('status','scheduled');
+  const{data:appts}=await sb.from('appointments').select('*').eq('agent_id',currentUser.id).order('created_at',{ascending:false});
   const apptList=document.getElementById('agent-appointments-list');
-  if(!appts||!appts.length){apptList.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No appointments</div></div>';}
+  if(!appts||!appts.length){apptList.innerHTML='<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No appointments yet</div><div class="empty-sub">Users will book you from the agents list</div></div>';}
   else{
     const apptUserIds=[...new Set(appts.map(a=>a.user_id))];
-    const{data:apptUsers}=await sb.from('users').select('id,phone').in('id',apptUserIds);
+    const{data:apptUsers}=await sb.from('users').select('id,phone,name').in('id',apptUserIds);
     const uMap={};(apptUsers||[]).forEach(u=>uMap[u.id]=u);
     apptList.innerHTML=appts.map(d=>{
       const u=uMap[d.user_id]||{};
+      const phone=u.phone||'No phone';
       return`<div class="request-card">
-        <div class="request-card-top"><span class="request-ref">APT-${d.id.slice(0,8).toUpperCase()}</span><span class="badge badge-blue">Scheduled</span></div>
+        <div class="request-card-top"><span class="request-ref">APT-${d.id.slice(0,8).toUpperCase()}</span><span class="badge badge-blue">${d.status||'scheduled'}</span></div>
         <div class="request-amount">$${d.amount} Cash</div>
         <div class="user-info-box" style="background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.15)">
-          <div style="font-size:0.82rem;font-weight:700;margin-bottom:4px">👤 ${d.user_name}</div>
-          <div style="font-size:0.78rem;color:var(--blue)">📞 ${u.phone||'No phone provided'}</div>
-          <div style="font-size:0.75rem;color:var(--gold);margin-top:4px">📅 ${d.date} at ${d.time}</div>
+          <div style="font-size:0.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">👤 User Info</div>
+          <div style="font-size:0.82rem;font-weight:700;margin-bottom:4px">${u.name||d.user_name}</div>
+          <div style="font-size:0.78rem;color:var(--blue);margin-bottom:4px">📞 ${phone}</div>
+          <div style="font-size:0.75rem;color:var(--gold)">📅 ${d.date} at ${d.time}</div>
           ${d.note?`<div style="font-size:0.72rem;color:var(--muted);margin-top:4px">💬 "${d.note}"</div>`:''}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button style="flex:1;padding:8px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--blue);border-radius:10px;font-size:0.78rem;font-weight:700;cursor:pointer" onclick="window.location.href='tel:${phone}'">📞 Call User</button>
         </div>
       </div>`;
     }).join('');
