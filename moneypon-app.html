@@ -1004,8 +1004,73 @@ async function loadAdminDashboard(){
   const processingTxs=(txAll||[]).filter(t=>t.status==='processing');
   document.getElementById('admin-processing-transactions').innerHTML=!processingTxs.length?'<div class="empty-state" style="padding:20px"><div class="empty-title">No transfers in processing</div></div>':processingTxs.map(d=>`<div class="admin-action-row"><div class="admin-action-info"><div class="admin-action-name">$${d.amount} → $${(d.receive_amount||d.amount*0.85).toFixed(2)} <span class="badge badge-blue">Zelle Sent</span></div><div class="admin-action-sub">To: ${d.recipient_name} • ${d.recipient_zelle}</div></div><div class="admin-action-btns"><button class="admin-btn-approve" onclick="markComplete('${d.id}')">✅ Mark Done</button></div></div>`).join('');
 
-  const{data:agents}=await sb.from('users').select('*').in('role',['agent','agent_pending']);
-  document.getElementById('admin-all-agents').innerHTML=(!agents||!agents.length)?'<div class="empty-state" style="padding:20px"><div class="empty-title">No agents yet</div></div>':agents.map(a=>`<div class="admin-action-row"><div class="admin-action-info"><div class="admin-action-name">${a.name} <span class="badge ${a.status==='active'?'badge-green':a.status==='blocked'?'badge-red':'badge-muted'}">${a.status||a.role}</span></div><div class="admin-action-sub">📍 ${a.location||'?'} • ${a.total_transactions||0} transfers</div></div><div class="admin-action-btns">${a.status==='active'?`<button class="admin-btn-block" onclick="blockAgent('${a.id}')">Block</button>`:''}${a.status==='blocked'?`<button class="admin-btn-approve" onclick="unblockAgent('${a.id}')">Unblock</button>`:''}</div></div>`).join('');
+  const{data:agents}=await sb.from('users').select('*').in('role',['agent']);
+  const{data:allAgentTx}=await sb.from('transactions').select('agent_id,amount,status');
+  const{data:allPayments}=await sb.from('agent_payments').select('*').order('created_at',{ascending:false});
+
+  const agentStats={};
+  (allAgentTx||[]).forEach(t=>{
+    if(!t.agent_id)return;
+    if(!agentStats[t.agent_id])agentStats[t.agent_id]={total:0,completed:0,volume:0};
+    agentStats[t.agent_id].total++;
+    if(t.status==='completed')agentStats[t.agent_id].completed++;
+    agentStats[t.agent_id].volume+=(t.amount||0);
+  });
+  const paidMap={};
+  (allPayments||[]).forEach(p=>{paidMap[p.agent_id]=(paidMap[p.agent_id]||0)+(p.amount||0);});
+
+  document.getElementById('admin-all-agents').innerHTML=(!agents||!agents.length)
+    ?'<div class="empty-state" style="padding:20px"><div class="empty-title">No agents yet</div></div>'
+    :agents.map(a=>{
+      const stats=agentStats[a.id]||{total:0,completed:0,volume:0};
+      const commRate=a.commission_rate||30;
+      const earned=(stats.volume*0.15*(commRate/100)).toFixed(2);
+      const paid=(paidMap[a.id]||0).toFixed(2);
+      const owed=Math.max(0,parseFloat(earned)-parseFloat(paid)).toFixed(2);
+      return`<div style="margin:0 16px 14px;background:var(--card);border-radius:16px;padding:14px;border:1px solid ${parseFloat(owed)>0?`rgba(255,77,109,0.2)`:`var(--border2)`}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <div style="font-size:0.88rem;font-weight:700;margin-bottom:3px">${a.name}
+              <span class="badge ${a.status==='active'?`badge-green`:`badge-red`}">${a.status}</span>
+            </div>
+            <div style="font-size:0.65rem;color:var(--muted)">📍 ${a.location||`?`}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:${parseFloat(owed)>0?`var(--red)`:`var(--green2)`}">$${owed}</div>
+            <div style="font-size:0.6rem;color:var(--muted)">Owed</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+          <div style="background:var(--card2);border-radius:8px;padding:7px;text-align:center">
+            <div style="font-weight:800;font-size:0.9rem;color:var(--gold)">${stats.total}</div>
+            <div style="font-size:0.52rem;color:var(--muted)">Tx Total</div>
+          </div>
+          <div style="background:var(--card2);border-radius:8px;padding:7px;text-align:center">
+            <div style="font-weight:800;font-size:0.9rem;color:var(--green2)">${stats.completed}</div>
+            <div style="font-size:0.52rem;color:var(--muted)">Done</div>
+          </div>
+          <div style="background:var(--card2);border-radius:8px;padding:7px;text-align:center">
+            <div style="font-weight:800;font-size:0.9rem;color:var(--gold)">$${earned}</div>
+            <div style="font-size:0.52rem;color:var(--muted)">Earned</div>
+          </div>
+          <div style="background:var(--card2);border-radius:8px;padding:7px;text-align:center">
+            <div style="font-weight:800;font-size:0.9rem;color:var(--muted)">${commRate}%</div>
+            <div style="font-size:0.52rem;color:var(--muted)">Comm.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="admin-btn-approve" style="flex:1" onclick="openPayAgentModal('${a.id}','${a.name}','${owed}')">💵 Pay $${owed}</button>
+          <button class="admin-btn-approve" style="flex:1;background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.25);color:var(--blue)" onclick="setCommission('${a.id}','${a.name}',${commRate})">% ${commRate}</button>
+          ${a.status==='active'?`<button class="admin-btn-block" onclick="blockAgent('${a.id}')">Block</button>`:`<button class="admin-btn-approve" onclick="unblockAgent('${a.id}')">Unblock</button>`}
+        </div>
+      </div>`;
+    }).join('');
+
+  // Payment history
+  const payEl=document.getElementById('admin-payments-history');
+  if(payEl){payEl.innerHTML=(!allPayments||!allPayments.length)
+    ?'<div class="empty-state" style="padding:20px"><div class="empty-title">No payments made yet</div></div>'
+    :allPayments.slice(0,30).map(p=>`<div class="admin-action-row"><div class="admin-action-info"><div class="admin-action-name">💵 $${p.amount} → ${p.agent_name}</div><div class="admin-action-sub">${p.note||'Payment'} • ${formatDate(p.created_at)}</div></div></div>`).join('');}
 
   const sorted=(txAll||[]).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   document.getElementById('admin-all-transactions').innerHTML=!sorted.length?'<div class="empty-state" style="padding:20px"><div class="empty-title">No transactions yet</div></div>':sorted.slice(0,50).map(d=>`
