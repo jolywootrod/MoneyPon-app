@@ -256,6 +256,37 @@ select.input-field option{background:var(--card)}
   </div>
 </div>
 
+<!-- PAY AGENT MODAL -->
+<div class="modal-overlay" id="modal-pay-agent">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💵 Pay Agent</div>
+    <div id="pay-agent-info" style="margin-bottom:12px"></div>
+    <div class="input-group"><label class="input-label">Amount to Pay (USD)</label><input type="number" class="input-field" id="pay-agent-amount" placeholder="e.g. 50"></div>
+    <div class="input-group"><label class="input-label">Note</label><input type="text" class="input-field" id="pay-agent-note" placeholder="e.g. Weekly payment"></div>
+    <input type="hidden" id="pay-agent-id">
+    <input type="hidden" id="pay-agent-name">
+    <button class="btn btn-green" onclick="submitAgentPayment()">✅ Confirm Payment</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-pay-agent')">Cancel</button>
+  </div>
+</div>
+
+<!-- SET COMMISSION MODAL -->
+<div class="modal-overlay" id="modal-commission">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">% Set Commission Rate</div>
+    <div id="commission-agent-info" style="margin-bottom:12px;font-size:0.82rem;color:var(--muted)"></div>
+    <div class="input-group"><label class="input-label">Commission % (of the 15% fee)</label><input type="number" class="input-field" id="commission-rate" placeholder="e.g. 30" min="0" max="100"></div>
+    <div style="background:rgba(0,194,122,0.06);border:1px solid rgba(0,194,122,0.12);border-radius:10px;padding:10px;margin-bottom:14px;font-size:0.75rem;color:var(--green2)">
+      Example: 30% means agent gets 30% of the 15% fee you charge. On a $100 transfer → fee = $15 → agent gets $4.50
+    </div>
+    <input type="hidden" id="commission-agent-id">
+    <button class="btn btn-green" onclick="saveCommission()">✅ Save Commission</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal('modal-commission')">Cancel</button>
+  </div>
+</div>
+
 <div id="app">
 
 <!-- SPLASH -->
@@ -514,6 +545,8 @@ select.input-field option{background:var(--card)}
     <div id="admin-all-agents"><div class="empty-state" style="padding:20px"><div class="empty-title">No agents yet</div></div></div>
     <div class="section-title">📋 All Transactions</div>
     <div id="admin-all-transactions"><div class="empty-state" style="padding:20px"><div class="empty-title">No transactions yet</div></div></div>
+    <div class="section-title">💰 Agent Payment History</div>
+    <div id="admin-payments-history"><div class="empty-state" style="padding:20px"><div class="empty-title">No payments made yet</div></div></div>
     <div style="height:30px"></div>
   </div>
 </div>
@@ -845,15 +878,42 @@ async function loadHistory(){
 // ===== AGENT DASHBOARD =====
 async function loadAgentDashboard(){
   if(!currentProfile)return;
+  // Count agent transactions from DB
+  const{data:agentTxCount}=await sb.from('transactions').select('id,amount,status').eq('agent_id',currentUser.id);
+  const totalTx=(agentTxCount||[]).length;
+  const completedTx=(agentTxCount||[]).filter(t=>t.status==='completed').length;
+  const totalVol=(agentTxCount||[]).reduce((s,t)=>s+(t.amount||0),0);
+  const commRate=currentProfile.commission_rate||30;
+  const estimatedEarnings=totalVol*0.15*(commRate/100);
+
   document.getElementById('agent-hero-content').innerHTML=`
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
       <div style="width:44px;height:44px;background:rgba(240,180,41,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem">🏅</div>
-      <div><div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:800;color:var(--gold)">${currentProfile.name}</div><div style="font-size:0.68rem;color:rgba(240,180,41,0.5)">📍 ${currentProfile.location||'Location not set'}</div></div>
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:800;color:var(--gold)">${currentProfile.name}</div>
+        <div style="font-size:0.68rem;color:rgba(240,180,41,0.5)">📍 ${currentProfile.location||'Location not set'}</div>
+        <div style="font-size:0.65rem;color:var(--green2);margin-top:2px">Commission: ${commRate}% of fees</div>
+      </div>
     </div>
-    <div style="display:flex;gap:8px">
-      <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center"><div style="font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:800;color:var(--gold)">$${currentProfile.earnings||0}</div><div style="font-size:0.55rem;color:rgba(255,255,255,0.4)">Earnings</div></div>
-      <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center"><div style="font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:800;color:var(--gold)">${currentProfile.total_transactions||0}</div><div style="font-size:0.55rem;color:rgba(255,255,255,0.4)">Done</div></div>
-      <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center"><div style="font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:800;color:var(--gold)">${(currentProfile.rating||5.0).toFixed(1)}⭐</div><div style="font-size:0.55rem;color:rgba(255,255,255,0.4)">Rating</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:10px;text-align:center;border:1px solid rgba(240,180,41,0.15)">
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;color:var(--gold)">${totalTx}</div>
+        <div style="font-size:0.58rem;color:rgba(255,255,255,0.4);margin-top:2px">📊 Total Transactions</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:10px;text-align:center;border:1px solid rgba(0,194,122,0.15)">
+        <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;color:var(--green2)">${completedTx}</div>
+        <div style="font-size:0.58rem;color:rgba(255,255,255,0.4);margin-top:2px">✅ Completed</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:var(--gold)">$${totalVol.toFixed(0)}</div>
+        <div style="font-size:0.58rem;color:rgba(255,255,255,0.4);margin-top:2px">💰 Volume Handled</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:900;color:var(--green2)">$${estimatedEarnings.toFixed(2)}</div>
+        <div style="font-size:0.58rem;color:rgba(255,255,255,0.4);margin-top:2px">💵 Est. Earnings</div>
+      </div>
     </div>`;
 
   const{data:requests}=await sb.from('transactions').select('*').eq('agent_id',currentUser.id).eq('status','scheduled').order('created_at',{ascending:false});
@@ -987,6 +1047,56 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
 // ===== UTILS =====
+// Pay agent
+function openPayAgentModal(agentId, agentName, owed){
+  document.getElementById('pay-agent-id').value=agentId;
+  document.getElementById('pay-agent-name').value=agentName;
+  document.getElementById('pay-agent-amount').value=parseFloat(owed).toFixed(2);
+  document.getElementById('pay-agent-info').innerHTML=`<div style="background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--border)"><div style="font-size:0.85rem;font-weight:700">${agentName}</div><div style="font-size:0.75rem;color:var(--red);margin-top:4px">Owed: $${parseFloat(owed).toFixed(2)}</div></div>`;
+  openModal('modal-pay-agent');
+}
+
+async function submitAgentPayment(){
+  const agentId=document.getElementById('pay-agent-id').value;
+  const agentName=document.getElementById('pay-agent-name').value;
+  const amount=parseFloat(document.getElementById('pay-agent-amount').value);
+  const note=document.getElementById('pay-agent-note').value||'Payment';
+  if(!amount||amount<=0){showToast('Enter valid amount');return;}
+  await sb.from('agent_payments').insert({agent_id:agentId,agent_name:agentName,amount,note,paid_by:'Admin'});
+  closeModal('modal-pay-agent');
+  showToast('✅ Payment recorded for '+agentName);
+  loadAdminDashboard();
+}
+
+// Set commission
+function setCommission(agentId, agentName, currentRate){
+  document.getElementById('commission-agent-id').value=agentId;
+  document.getElementById('commission-agent-info').textContent='Setting commission for: '+agentName;
+  document.getElementById('commission-rate').value=currentRate;
+  openModal('modal-commission');
+}
+
+async function saveCommission(){
+  const agentId=document.getElementById('commission-agent-id').value;
+  const rate=parseFloat(document.getElementById('commission-rate').value);
+  if(isNaN(rate)||rate<0||rate>100){showToast('Enter a valid % between 0-100');return;}
+  await sb.from('users').update({commission_rate:rate}).eq('id',agentId);
+  closeModal('modal-commission');
+  showToast('✅ Commission rate updated!');
+  loadAdminDashboard();
+}
+
+// Reset agent dashboard
+async function resetAgentDashboard(agentId, agentName){
+  if(!confirm('Reset all transactions and stats for '+agentName+'? This cannot be undone.'))return;
+  await sb.from('transactions').delete().eq('agent_id',agentId);
+  await sb.from('appointments').delete().eq('agent_id',agentId);
+  await sb.from('agent_payments').delete().eq('agent_id',agentId);
+  await sb.from('users').update({total_transactions:0,earnings:0,total_sent:0}).eq('id',agentId);
+  showToast('🔄 '+agentName+' dashboard reset!');
+  loadAdminDashboard();
+}
+
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 function formatDate(ts){if(!ts)return'Just now';return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
 </script>
