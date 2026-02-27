@@ -481,10 +481,11 @@ select.input-field option{background:var(--card)}
   <div class="topbar"><span class="topbar-logo">MoneyPon</span><span class="badge badge-gold">Agent</span><div class="topbar-icon-btn" onclick="logoutUser()">🚪</div></div>
   <div class="scroll-area">
     <div class="agent-hero" id="agent-hero-content"></div>
-    <div class="section-title">New Requests</div>
+    <div class="section-title">🔔 New Requests</div>
     <div id="agent-requests-list"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No requests yet</div></div></div>
-    <div class="section-title">Appointments</div>
+    <div class="section-title">📅 Appointments</div>
     <div id="agent-appointments-list"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-title">No appointments</div></div></div>
+
   </div>
   <div class="bottom-nav">
     <div class="nav-item active"><span class="nav-icon">📋</span><span class="nav-label">Requests</span></div>
@@ -947,7 +948,28 @@ async function loadAdminDashboard(){
   document.getElementById('admin-all-agents').innerHTML=(!agents||!agents.length)?'<div class="empty-state" style="padding:20px"><div class="empty-title">No agents yet</div></div>':agents.map(a=>`<div class="admin-action-row"><div class="admin-action-info"><div class="admin-action-name">${a.name} <span class="badge ${a.status==='active'?'badge-green':a.status==='blocked'?'badge-red':'badge-muted'}">${a.status||a.role}</span></div><div class="admin-action-sub">📍 ${a.location||'?'} • ${a.total_transactions||0} transfers</div></div><div class="admin-action-btns">${a.status==='active'?`<button class="admin-btn-block" onclick="blockAgent('${a.id}')">Block</button>`:''}${a.status==='blocked'?`<button class="admin-btn-approve" onclick="unblockAgent('${a.id}')">Unblock</button>`:''}</div></div>`).join('');
 
   const sorted=(txAll||[]).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-  document.getElementById('admin-all-transactions').innerHTML=!sorted.length?'<div class="empty-state" style="padding:20px"><div class="empty-title">No transactions yet</div></div>':sorted.slice(0,20).map(d=>`<div class="admin-action-row"><div class="admin-action-info"><div class="admin-action-name">$${d.amount} <span class="badge ${d.status==='completed'?'badge-green':d.status==='flagged'?'badge-red':'badge-gold'}">${d.status}</span></div><div class="admin-action-sub">From: ${d.sender_name} → To: ${d.recipient_name}</div></div><div class="admin-action-btns"><button class="admin-btn-approve" onclick="viewTransfer('${d.id}')">View</button></div></div>`).join('');
+  document.getElementById('admin-all-transactions').innerHTML=!sorted.length?'<div class="empty-state" style="padding:20px"><div class="empty-title">No transactions yet</div></div>':sorted.slice(0,50).map(d=>`
+    <div style="margin:0 16px 10px;background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:0.65rem;color:var(--muted);font-family:monospace">TXN-${d.id.slice(0,8).toUpperCase()}</span>
+        <span class="badge ${d.status==='completed'?'badge-green':d.status==='flagged'?'badge-red':d.status==='processing'?'badge-blue':'badge-gold'}">${d.status}</span>
+      </div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:900;color:var(--gold);margin-bottom:8px">$${d.amount} → $${(d.receive_amount||d.amount*0.85).toFixed(2)}</div>
+      <div style="background:rgba(0,194,122,0.05);border:1px solid rgba(0,194,122,0.1);border-radius:10px;padding:10px;margin-bottom:8px">
+        <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;font-weight:700">💸 Sender</div>
+        <div style="font-size:0.82rem;font-weight:700">👤 ${d.sender_name||'Unknown'}</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">Agent: ${d.agent_name||'N/A'}</div>
+      </div>
+      <div style="background:rgba(240,180,41,0.05);border:1px solid rgba(240,180,41,0.1);border-radius:10px;padding:10px;margin-bottom:8px">
+        <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;font-weight:700">🎯 Recipient (USA)</div>
+        <div style="font-size:0.82rem;font-weight:700">👤 ${d.recipient_name||'Unknown'}</div>
+        <div style="font-size:0.72rem;color:var(--gold);margin-top:2px">💳 Zelle: ${d.recipient_zelle||'N/A'}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:0.65rem;color:var(--muted)">${formatDate(d.created_at)}</span>
+        <button class="admin-btn-approve" onclick="viewTransfer('${d.id}')">View Details</button>
+      </div>
+    </div>`).join('');
 }
 
 async function markComplete(txId){await sb.from('transactions').update({status:'completed',completed_at:new Date().toISOString()}).eq('id',txId);showToast('✅ Transfer marked complete!');loadAdminDashboard();}
